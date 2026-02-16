@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserPlus, Loader2, Building2 } from "lucide-react";
 import { supabase } from "@/api/base44Client";
+import { appConfig } from "@/config/appConfig";
 
 export default function Signup() {
   const [businessName, setBusinessName] = useState("");
@@ -54,7 +55,7 @@ export default function Signup() {
           <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg mb-4">
             <Building2 className="w-8 h-8 text-white" />
           </div>
-          <CardTitle className="text-2xl font-bold text-slate-900">CRM Mehanix</CardTitle>
+          <CardTitle className="text-2xl font-bold text-slate-900">{appConfig.appName}</CardTitle>
           <p className="text-sm text-slate-500 mt-1">הרשמה למערכת</p>
         </CardHeader>
         <CardContent>

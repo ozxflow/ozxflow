@@ -15,6 +15,7 @@ import QuoteView from "@/components/quotes/QuoteView";
 import { format } from 'date-fns';
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { appConfig } from "@/config/appConfig";
 
 export default function Quotes() {
   const [showForm, setShowForm] = useState(false);
@@ -507,7 +508,7 @@ export default function Quotes() {
                         </Button>
                         {lead.customer_phone && (
                           <a 
-                            href={`https://wa.me/972${lead.customer_phone.replace(/\D/g, '').replace(/^0/, '')}?text=${encodeURIComponent(`היי ${lead.customer_name}\nבהמשך לשיחה שלנו, מסכם לך בקצרה איך אנחנו עובדים ב-richecom:\n\nהמטרה היא אחת\nלבנות חנות שעובדת ומגיעה למכירות בצורה עקבית.\n\nמה התהליך כולל:\n• בניית חנות Shopify פרימיום\n• מחקר מוצרים ומסרים מדויקים\n• אסטרטגיית טראפיק ראשונית\n• תשתית מדידה מלאה (פיקסל, GA4)\n• אוטומציות בסיסיות למכירה\n• ליווי אישי 1-על-1 לאורך הדרך\n\nההשקעה שלך בתהליך:\n7,500 ₪ + מע״מ\n\nאנחנו עובדים איתך, צעד-צעד,\nולא משחררים לפני שהחנות מתחילה למכור.\n\nאם זה מדויק לך\nתן אישור ונצא לדרך.`)}`} 
+                            href={`https://wa.me/972${lead.customer_phone.replace(/\D/g, '').replace(/^0/, '')}?text=${encodeURIComponent(`היי ${lead.customer_name}\nבהמשך לשיחה שלנו, מסכם לך בקצרה איך אנחנו עובדים ב-${appConfig.quoteBrandName}:\n\nהמטרה היא אחת\nלבנות חנות שעובדת ומגיעה למכירות בצורה עקבית.\n\nמה התהליך כולל:\n• בניית חנות Shopify פרימיום\n• מחקר מוצרים ומסרים מדויקים\n• אסטרטגיית טראפיק ראשונית\n• תשתית מדידה מלאה (פיקסל, GA4)\n• אוטומציות בסיסיות למכירה\n• ליווי אישי 1-על-1 לאורך הדרך\n\nההשקעה שלך בתהליך:\n7,500 ₪ + מע״מ\n\nאנחנו עובדים איתך, צעד-צעד,\nולא משחררים לפני שהחנות מתחילה למכור.\n\nאם זה מדויק לך\nתן אישור ונצא לדרך.`)}`} 
                             target="_blank" 
                             rel="noopener noreferrer"
                           >
@@ -577,7 +578,7 @@ export default function Quotes() {
                           </Button>
                           {quote.customer_phone && (
                             <a 
-                              href={`https://wa.me/972${quote.customer_phone.replace(/\D/g, '').replace(/^0/, '')}?text=${encodeURIComponent(`היי ${quote.customer_name}\nבהמשך לשיחה שלנו, מסכם לך בקצרה איך אנחנו עובדים ב-richecom:\n\nהמטרה היא אחת\nלבנות חנות שעובדת ומגיעה למכירות בצורה עקבית.\n\nמה התהליך כולל:\n• בניית חנות Shopify פרימיום\n• מחקר מוצרים ומסרים מדויקים\n• אסטרטגיית טראפיק ראשונית\n• תשתית מדידה מלאה (פיקסל, GA4)\n• אוטומציות בסיסיות למכירה\n• ליווי אישי 1-על-1 לאורך הדרך\n\nההשקעה שלך בתהליך:\n₪${quote.grand_total?.toLocaleString() || '0'}\n\nאנחנו עובדים איתך, צעד-צעד,\nולא משחררים לפני שהחנות מתחילה למכור.\n\nאם זה מדויק לך\nתן אישור ונצא לדרך.`)}`} 
+                              href={`https://wa.me/972${quote.customer_phone.replace(/\D/g, '').replace(/^0/, '')}?text=${encodeURIComponent(`היי ${quote.customer_name}\nבהמשך לשיחה שלנו, מסכם לך בקצרה איך אנחנו עובדים ב-${appConfig.quoteBrandName}:\n\nהמטרה היא אחת\nלבנות חנות שעובדת ומגיעה למכירות בצורה עקבית.\n\nמה התהליך כולל:\n• בניית חנות Shopify פרימיום\n• מחקר מוצרים ומסרים מדויקים\n• אסטרטגיית טראפיק ראשונית\n• תשתית מדידה מלאה (פיקסל, GA4)\n• אוטומציות בסיסיות למכירה\n• ליווי אישי 1-על-1 לאורך הדרך\n\nההשקעה שלך בתהליך:\n₪${quote.grand_total?.toLocaleString() || '0'}\n\nאנחנו עובדים איתך, צעד-צעד,\nולא משחררים לפני שהחנות מתחילה למכור.\n\nאם זה מדויק לך\nתן אישור ונצא לדרך.`)}`} 
                               target="_blank" 
                               rel="noopener noreferrer"
                             >

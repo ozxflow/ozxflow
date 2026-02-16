@@ -40,6 +40,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
 import SubscriptionBell from "@/components/SubscriptionBell";
 import { hasFeature } from "@/lib/planFeatures";
+import { appConfig } from "@/config/appConfig";
 
 // פונקציית עזר - בדיקת הרשאה
 const hasPermission = (user, permission) => {
@@ -505,7 +506,7 @@ export default function Layout({ children }) {
           <footer className="bg-white border-t border-slate-200 px-3 py-2 md:px-4 md:py-3">
             <div className="flex flex-col md:flex-row items-center justify-between gap-2 text-xs md:text-sm">
               <a 
-                href={`https://wa.me/972553123658?text=${encodeURIComponent(`הגעתי מהמערכת של ${businessSettings.business_name || 'העסק'} ואני רוצה לשמוע פרטים`)}`}
+                href={`https://wa.me/${appConfig.supportWhatsApp}?text=${encodeURIComponent(`הגעתי מהמערכת של ${businessSettings.business_name || 'העסק'} ואני רוצה לשמוע פרטים`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-green-600 hover:text-green-700 font-medium text-center"
@@ -513,7 +514,7 @@ export default function Layout({ children }) {
                 💬 רוצה מערכת כזו? השאר פרטים
               </a>
               <a 
-                href="https://xflow.co.il/" 
+                href={appConfig.supportSiteUrl} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-slate-500 hover:text-blue-600 transition-colors"

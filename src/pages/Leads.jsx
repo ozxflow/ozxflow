@@ -17,6 +17,7 @@ import _ from 'lodash';
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import LeadsImport from "@/components/leads/LeadsImport";
+import { appConfig } from "@/config/appConfig";
 
 const MetricCard = ({ title, value, color, isActive, onClick }) => (
   <Card 
@@ -575,7 +576,7 @@ export default function Leads() {
                 <p className="text-sm text-red-600">כדי להוסיף לידים נוספים יש לשדרג את החבילה</p>
               </div>
             </div>
-            <a href={`https://wa.me/972553123658?text=${encodeURIComponent('היי, אני רוצה לשדרג את החבילה שלי במערכת')}`} target="_blank" rel="noopener noreferrer">
+            <a href={`https://wa.me/${appConfig.supportWhatsApp}?text=${encodeURIComponent('היי, אני רוצה לשדרג את החבילה שלי במערכת')}`} target="_blank" rel="noopener noreferrer">
               <Button className="bg-red-600 hover:bg-red-700 text-white whitespace-nowrap">שדרג עכשיו</Button>
             </a>
           </motion.div>
@@ -589,7 +590,7 @@ export default function Leads() {
                 <p className="text-sm text-yellow-600">שדרג את החבילה כדי להמשיך להוסיף לידים ללא הגבלה</p>
               </div>
             </div>
-            <a href={`https://wa.me/972553123658?text=${encodeURIComponent('היי, אני רוצה לשדרג את החבילה שלי במערכת')}`} target="_blank" rel="noopener noreferrer">
+            <a href={`https://wa.me/${appConfig.supportWhatsApp}?text=${encodeURIComponent('היי, אני רוצה לשדרג את החבילה שלי במערכת')}`} target="_blank" rel="noopener noreferrer">
               <Button className="bg-yellow-600 hover:bg-yellow-700 text-white whitespace-nowrap">שדרג עכשיו</Button>
             </a>
           </motion.div>

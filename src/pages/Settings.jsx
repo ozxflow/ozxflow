@@ -13,6 +13,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { appConfig } from "@/config/appConfig";
 
 const ALL_LEAD_STATUSES = [
   "חדש", "בטיפול", "נקבעה פגישה", "התקיימה פגישה", "הצעת מחיר", "לא סגר", "סגר",
@@ -496,7 +497,7 @@ export default function Settings() {
                     <p>
                       💬 <strong>רוצה מערכת כזו?</strong>{" "}
                       <a 
-                        href={`https://wa.me/972553123658?text=${encodeURIComponent(`הגעתי מהמערכת של ${brandingSettings.business_name || 'העסק'} ואני רוצה לשמוע פרטים`)}`}
+                        href={`https://wa.me/${appConfig.supportWhatsApp}?text=${encodeURIComponent(`הגעתי מהמערכת של ${brandingSettings.business_name || 'העסק'} ואני רוצה לשמוע פרטים`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-green-600 hover:underline font-medium"
@@ -507,7 +508,7 @@ export default function Settings() {
                     <p>
                       🔧 פותח על ידי{" "}
                       <a 
-                        href="https://xflow.co.il/" 
+                        href={appConfig.supportSiteUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:underline font-semibold"
