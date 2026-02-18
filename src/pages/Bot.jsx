@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/api/base44Client";
 import { processBotInput } from "@/lib/botEngine";
 import { Button } from "@/components/ui/button";
@@ -52,7 +52,7 @@ export default function Bot() {
       setMessages(dbMessages);
 
       if (!dbMessages.length) {
-        const hello = "שלום, אני בוט חוקים פנימי. אפשר לבקש: יצירת ליד, חיפוש לקוח, סטטיסטיקות, יצירת משימה, או להעלות קובץ.";
+        const hello = "׳©׳׳•׳, ׳׳ ׳™ ׳‘׳•׳˜ ׳—׳•׳§׳™׳ ׳₪׳ ׳™׳׳™. ׳׳₪׳©׳¨ ׳׳‘׳§׳©: ׳™׳¦׳™׳¨׳× ׳׳™׳“, ׳—׳™׳₪׳•׳© ׳׳§׳•׳—, ׳¡׳˜׳˜׳™׳¡׳˜׳™׳§׳•׳×, ׳™׳¦׳™׳¨׳× ׳׳©׳™׳׳”, ׳׳• ׳׳”׳¢׳׳•׳× ׳§׳•׳‘׳¥.";
         const firstMsg = await supabase.bot.addMessage(conv.id, {
           role: "assistant",
           content: hello,
@@ -62,7 +62,7 @@ export default function Bot() {
       }
     } catch (error) {
       toast({
-        title: "שגיאה בטעינת הבוט",
+        title: "׳©׳’׳™׳׳” ׳‘׳˜׳¢׳™׳ ׳× ׳”׳‘׳•׳˜",
         description: error.message,
         variant: "destructive",
       });
@@ -90,7 +90,7 @@ export default function Bot() {
       }
 
       const userText = inputMessage.trim();
-      const userContent = userText || `הועלה קובץ: ${fileMeta?.fileName || selectedFile?.name || "file"}`;
+      const userContent = userText || `׳”׳•׳¢׳׳” ׳§׳•׳‘׳¥: ${fileMeta?.fileName || selectedFile?.name || "file"}`;
 
       const userDbMessage = await supabase.bot.addMessage(conversation.id, {
         role: "user",
@@ -121,7 +121,7 @@ export default function Bot() {
       setSelectedFile(null);
     } catch (error) {
       toast({
-        title: "שגיאה בשליחה",
+        title: "׳©׳’׳™׳׳” ׳‘׳©׳׳™׳—׳”",
         description: error.message,
         variant: "destructive",
       });
@@ -175,8 +175,9 @@ export default function Bot() {
             </div>
 
             <form onSubmit={handleSendMessage} className="border-t p-3 flex gap-2 items-end">
-              <label className="inline-flex items-center gap-1 cursor-pointer border rounded-md px-2 h-10">
+              <label className="inline-flex items-center gap-2 cursor-pointer border rounded-md px-3 h-10 bg-white">
                 <Paperclip className="w-4 h-4" />
+                <span className="text-sm">׳¦׳¨׳£ ׳§׳•׳‘׳¥</span>
                 <input
                   type="file"
                   className="hidden"
@@ -196,8 +197,7 @@ export default function Bot() {
               </Button>
             </form>
             {selectedFile && (
-              <div className="px-3 pb-3 text-xs text-slate-600">
-                קובץ נבחר: {selectedFile.name}
+              <div className="px-3 pb-3 text-xs text-slate-600">קובץ נבחר: {selectedFile.name}
               </div>
             )}
           </CardContent>
@@ -206,3 +206,5 @@ export default function Bot() {
     </div>
   );
 }
+
+

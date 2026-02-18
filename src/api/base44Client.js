@@ -130,11 +130,15 @@ export const supabase = {
       const merged = { ...user, ...metadata };
 
       // Look up org membership from org_members table
-      const { data: membership } = await supabaseClient
+      const { data: membership, error: membershipError } = await supabaseClient
         .from('org_members')
         .select('org_id, role, organizations(id, name, plan, max_leads_per_month, max_users, is_active, subscription_end_date, auto_renew, auto_renew_months)')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
+
+      if (membershipError && membershipError.code !== 'PGRST116') {
+        console.warn('org_members lookup failed:', membershipError.message);
+      }
 
       if (membership) {
         merged.org_id = membership.org_id;
@@ -145,7 +149,28 @@ export const supabase = {
         // Store org_id at module level for tenant filtering
         currentOrgId = membership.org_id;
       } else {
-        merged.role = metadata.role || 'admin';
+        // Fallback: users created outside org_members can still own an organization.
+        const { data: ownedOrg, error: ownedOrgError } = await supabaseClient
+          .from('organizations')
+          .select('id, name, plan, max_leads_per_month, max_users, is_active, subscription_end_date, auto_renew, auto_renew_months')
+          .eq('owner_id', user.id)
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        if (ownedOrgError && ownedOrgError.code !== 'PGRST116') {
+          console.warn('owned organization lookup failed:', ownedOrgError.message);
+        }
+
+        if (ownedOrg) {
+          merged.org_id = ownedOrg.id;
+          merged.org = ownedOrg;
+          merged.role = metadata.role || 'admin';
+          currentOrgId = ownedOrg.id;
+        } else {
+          merged.role = metadata.role || 'admin';
+          currentOrgId = null;
+        }
       }
 
       // Super admin flag

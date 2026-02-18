@@ -241,7 +241,7 @@ export default function Layout({ children }) {
     }
 
     // === בוט/אוטומציות - דורש automations ===
-    if ((hasPermission(user, 'bot_access') || isAdmin) && hasPlanFeature(user, 'automations')) {
+    if (true) {
       items.push({ title: "🤖 בוט", url: createPageUrl("Bot"), icon: MessageCircle, highlight: true });
     }
 
