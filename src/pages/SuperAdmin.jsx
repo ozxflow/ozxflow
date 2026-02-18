@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/api/base44Client";
 import { PLAN_NAMES, ALL_PLANS } from "@/lib/planFeatures";
+import { useToast } from "@/components/ui/use-toast";
 
 const PLAN_COLORS = {
   free: "bg-gray-100 text-gray-700",
@@ -54,6 +55,7 @@ const PLAN_COLORS = {
 
 export default function SuperAdmin() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Edit org state
   const [editOrg, setEditOrg] = useState(null);
@@ -75,6 +77,7 @@ export default function SuperAdmin() {
     plan: "free",
   });
   const [addError, setAddError] = useState("");
+  const [planLinksDraft, setPlanLinksDraft] = useState({});
 
   // Fetch organizations
   const {
@@ -84,6 +87,18 @@ export default function SuperAdmin() {
   } = useQuery({
     queryKey: ["superadmin", "orgs"],
     queryFn: () => supabase.superAdmin.listOrgs(),
+  });
+
+  const { data: plans = [] } = useQuery({
+    queryKey: ["superadmin", "plans"],
+    queryFn: () => supabase.superAdmin.listPlans(),
+  });
+
+  const updatePlanConfigMutation = useMutation({
+    mutationFn: ({ planId, updates }) => supabase.superAdmin.updatePlanConfig(planId, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["superadmin", "plans"] });
+    },
   });
 
   // Update plan mutation
@@ -177,6 +192,24 @@ export default function SuperAdmin() {
   };
 
   const isSaving = updatePlanMutation.isPending || toggleOrgMutation.isPending;
+
+  const handleSavePlanLinks = async (planId) => {
+    const row = planLinksDraft[planId];
+    if (!row) return;
+
+    try {
+      await updatePlanConfigMutation.mutateAsync({
+        planId,
+        updates: {
+          setup_payment_url: row.setup_payment_url || null,
+          monthly_payment_url: row.monthly_payment_url || null,
+        },
+      });
+      toast({ title: "קישורי התשלום נשמרו" });
+    } catch (err) {
+      toast({ title: "שגיאה בשמירת קישורים", description: err.message, variant: "destructive" });
+    }
+  };
 
   // Compute stats
   const totalOrgs = orgs.length;
@@ -355,6 +388,75 @@ export default function SuperAdmin() {
               </TableBody>
             </Table>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Plan Payment Links */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">קישורי תשלום לחבילות</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {plans
+            .filter((p) => ["starter", "growth", "premium"].includes(p.id))
+            .map((plan) => {
+              const draft = planLinksDraft[plan.id] || {
+                setup_payment_url: plan.setup_payment_url || "",
+                monthly_payment_url: plan.monthly_payment_url || "",
+              };
+              return (
+                <div key={plan.id} className="rounded-lg border p-4 space-y-3">
+                  <div className="font-semibold">{PLAN_NAMES[plan.id] || plan.name_he || plan.name}</div>
+                  <div className="space-y-2">
+                    <Label>לינק תשלום הקמה</Label>
+                    <Input
+                      dir="ltr"
+                      className="text-left"
+                      value={draft.setup_payment_url}
+                      placeholder="https://..."
+                      onChange={(e) =>
+                        setPlanLinksDraft((prev) => ({
+                          ...prev,
+                          [plan.id]: {
+                            ...draft,
+                            setup_payment_url: e.target.value,
+                          },
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>לינק מנוי חודשי</Label>
+                    <Input
+                      dir="ltr"
+                      className="text-left"
+                      value={draft.monthly_payment_url}
+                      placeholder="https://..."
+                      onChange={(e) =>
+                        setPlanLinksDraft((prev) => ({
+                          ...prev,
+                          [plan.id]: {
+                            ...draft,
+                            monthly_payment_url: e.target.value,
+                          },
+                        }))
+                      }
+                    />
+                  </div>
+                  <Button
+                    onClick={() => handleSavePlanLinks(plan.id)}
+                    disabled={updatePlanConfigMutation.isPending}
+                  >
+                    {updatePlanConfigMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin ml-2" />
+                    ) : (
+                      <Save className="w-4 h-4 ml-2" />
+                    )}
+                    שמור קישורים
+                  </Button>
+                </div>
+              );
+            })}
         </CardContent>
       </Card>
 

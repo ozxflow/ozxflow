@@ -16,6 +16,7 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const referralCode = new URLSearchParams(window.location.search).get("ref");
   const navigate = useNavigate();
 
   const handleSignup = async (e) => {
@@ -35,7 +36,7 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      const result = await supabase.auth.signUp(email, password, fullName, businessName);
+      const result = await supabase.auth.signUp(email, password, fullName, businessName, referralCode);
       if (result.error) {
         setError(result.error);
       } else {

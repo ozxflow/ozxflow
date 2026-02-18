@@ -154,7 +154,7 @@ export const supabase = {
       if (error) return { error: error.message };
       return { user: data.user };
     },
-    signUp: async (email, password, fullName, businessName) => {
+    signUp: async (email, password, fullName, businessName, referralCode = null) => {
       // 1. Create auth user
       const { data: authData, error: authError } = await supabaseClient.auth.signUp({
         email,
@@ -179,6 +179,18 @@ export const supabase = {
         p_full_name: fullName,
       });
       if (orgError) throw orgError;
+
+      // Optional referral hook: if DB function exists, link signup to referral/affiliate source
+      if (referralCode) {
+        const { error: referralError } = await supabaseClient.rpc('apply_referral_code', {
+          p_ref_code: referralCode,
+          p_referred_user_id: user.id,
+          p_referred_org_id: orgId,
+        });
+        if (referralError) {
+          console.warn('Referral code was not applied:', referralError.message);
+        }
+      }
 
       // Store org_id at module level
       currentOrgId = orgId;
@@ -374,10 +386,36 @@ export const supabase = {
       if (error) throw error;
       return data;
     },
+    listPlans: async () => {
+      const { data, error } = await supabaseClient
+        .from('subscription_plans')
+        .select('*')
+        .order('display_order', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
   },
 
   // Super admin methods (no org filtering)
   superAdmin: {
+    listPlans: async () => {
+      const { data, error } = await supabaseClient
+        .from('subscription_plans')
+        .select('*')
+        .order('display_order', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    updatePlanConfig: async (planId, updates) => {
+      const { data, error } = await supabaseClient
+        .from('subscription_plans')
+        .update(updates)
+        .eq('id', planId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
     listOrgs: async () => {
       const { data, error } = await supabaseClient
         .from('organizations')

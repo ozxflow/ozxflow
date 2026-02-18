@@ -1,15 +1,15 @@
-// Plan feature definitions and limits for multi-tenancy
+﻿// Plan feature definitions and limits for multi-tenancy
 
 export const PLAN_NAMES = {
-  free: "חינם",
-  starter: "סטארטר",
-  growth: "צמיחה",
-  premium: "פרימיום",
-  enterprise: "אנטרפרייז",
+  free: "צעדים ראשונים",
+  starter: "עסק בתנופה",
+  growth: "צמיחה מואצת",
+  premium: "הנבחרת",
+  enterprise: "Custom",
 };
 
 export const PLAN_FEATURES = {
-  free: ["basic_crm", "basic_reports", "inventory"],
+  free: ["basic_crm", "basic_reports"],
   starter: [
     "basic_crm",
     "basic_reports",
@@ -17,7 +17,6 @@ export const PLAN_FEATURES = {
     "email_support",
     "lead_import",
     "landing_pages",
-    "inventory",
   ],
   growth: [
     "basic_crm",
@@ -87,25 +86,25 @@ export const PLAN_LIMITS = {
     leads: 99,
     users: 5,
     price_per_user: 69,
-    setup_cost: 0,
+    setup_cost: 1500,
   },
   growth: {
     leads: 300,
     users: 15,
     price_per_user: 249,
-    setup_cost: 0,
+    setup_cost: 5500,
   },
   premium: {
     leads: 500,
     users: Infinity,
     price_per_user: 249,
-    setup_cost: 0,
+    setup_cost: 10500,
   },
   enterprise: {
     leads: 999,
     users: Infinity,
-    price_per_user: null, // custom pricing
-    setup_cost: null, // custom pricing
+    price_per_user: null,
+    setup_cost: null,
   },
 };
 
@@ -126,6 +125,8 @@ export const ALL_PLANS = [
     leads: 40,
     users: 1,
     price: "חינם",
+    setupCost: 0,
+    monthlyPerUser: 0,
     features: PLAN_FEATURES.free,
   },
   {
@@ -133,31 +134,41 @@ export const ALL_PLANS = [
     name: PLAN_NAMES.starter,
     leads: 99,
     users: 5,
-    price: "69₪ / משתמש",
+    price: "1,500₪ הקמה + 69₪ למשתמש",
+    setupCost: 1500,
+    monthlyPerUser: 69,
     features: PLAN_FEATURES.starter,
   },
   {
     id: "growth",
     name: PLAN_NAMES.growth,
-    leads: 300,
+    leads: "99-300",
     users: 15,
-    price: "249₪ / משתמש",
+    price: "5,500₪ הקמה + 249₪ למשתמש",
+    setupCost: 5500,
+    monthlyPerUser: 249,
+    badge: "הנמכרת ביותר",
     features: PLAN_FEATURES.growth,
   },
   {
     id: "premium",
     name: PLAN_NAMES.premium,
-    leads: 500,
+    leads: "300-500",
     users: "ללא הגבלה",
-    price: "249₪ / משתמש",
+    price: "10,500₪ הקמה + 249₪ למשתמש",
+    setupCost: 10500,
+    monthlyPerUser: 249,
+    notes: "מעל 500 לידים - חבילת Custom, הנחה 15%-20% בתשלום שנתי.",
     features: PLAN_FEATURES.premium,
   },
   {
     id: "enterprise",
     name: PLAN_NAMES.enterprise,
-    leads: "999+",
+    leads: "500+",
     users: "ללא הגבלה",
     price: "מותאם אישית",
+    setupCost: null,
+    monthlyPerUser: null,
     features: PLAN_FEATURES.enterprise,
   },
 ];
