@@ -936,6 +936,55 @@ export const supabase = {
       if (error) throw error;
       return data || [];
     },
+    listBotInstructions: async () => {
+      const { data, error } = await supabaseClient
+        .from('bot_instructions')
+        .select('*')
+        .is('org_id', null)
+        .order('priority', { ascending: true })
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    upsertGlobalBotInstruction: async (payload) => {
+      if (payload.id) {
+        const { data, error } = await supabaseClient
+          .from('bot_instructions')
+          .update({
+            title: payload.title,
+            instruction: payload.instruction,
+            priority: payload.priority ?? 100,
+            is_active: payload.is_active !== false,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', payload.id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
+
+      const { data, error } = await supabaseClient
+        .from('bot_instructions')
+        .insert({
+          org_id: null,
+          title: payload.title,
+          instruction: payload.instruction,
+          priority: payload.priority ?? 100,
+          is_active: payload.is_active !== false,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    deleteBotInstruction: async (id) => {
+      const { error } = await supabaseClient
+        .from('bot_instructions')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
     createBotQA: async (payload) => {
       const { data, error } = await supabaseClient
         .from('bot_qa')

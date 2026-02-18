@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -87,6 +87,13 @@ export default function SuperAdmin() {
     category: "general",
     priority: 100,
   });
+  const [instructionForm, setInstructionForm] = useState({
+    id: "",
+    title: "הנחיה כללית",
+    instruction: "",
+    priority: 10,
+    is_active: true,
+  });
 
   // Fetch organizations
   const {
@@ -106,6 +113,10 @@ export default function SuperAdmin() {
   const { data: botQa = [] } = useQuery({
     queryKey: ["superadmin", "botQa"],
     queryFn: () => supabase.superAdmin.listBotQA(),
+  });
+  const { data: botInstructions = [] } = useQuery({
+    queryKey: ["superadmin", "botInstructions"],
+    queryFn: () => supabase.superAdmin.listBotInstructions(),
   });
 
   const { data: botConversations = [] } = useQuery({
@@ -138,6 +149,28 @@ export default function SuperAdmin() {
     },
     onError: (err) => {
       toast({ title: "שגיאה במחיקה", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const upsertInstructionMutation = useMutation({
+    mutationFn: (payload) => supabase.superAdmin.upsertGlobalBotInstruction(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["superadmin", "botInstructions"] });
+      toast({ title: "הנחיות הבוט נשמרו" });
+    },
+    onError: (err) => {
+      toast({ title: "שגיאה בשמירת הנחיות", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const deleteInstructionMutation = useMutation({
+    mutationFn: (id) => supabase.superAdmin.deleteBotInstruction(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["superadmin", "botInstructions"] });
+      toast({ title: "הנחיה נמחקה" });
+    },
+    onError: (err) => {
+      toast({ title: "שגיאה במחיקת הנחיה", description: err.message, variant: "destructive" });
     },
   });
 
@@ -258,6 +291,18 @@ export default function SuperAdmin() {
     }
   };
 
+  useEffect(() => {
+    if (!botInstructions.length) return;
+    const primary = botInstructions[0];
+    setInstructionForm({
+      id: primary.id,
+      title: primary.title || "הנחיה כללית",
+      instruction: primary.instruction || "",
+      priority: primary.priority ?? 10,
+      is_active: primary.is_active !== false,
+    });
+  }, [botInstructions]);
+
   const handleCreateBotQA = () => {
     if (!qaForm.question.trim() || !qaForm.answer.trim()) {
       toast({ title: "יש למלא שאלה ותשובה", variant: "destructive" });
@@ -275,6 +320,20 @@ export default function SuperAdmin() {
       keywords,
       category: qaForm.category.trim() || "general",
       priority: Number(qaForm.priority) || 100,
+    });
+  };
+
+  const handleSaveInstructions = () => {
+    if (!instructionForm.instruction.trim()) {
+      toast({ title: "יש למלא הנחיה", variant: "destructive" });
+      return;
+    }
+    upsertInstructionMutation.mutate({
+      id: instructionForm.id || undefined,
+      title: instructionForm.title.trim() || "הנחיה כללית",
+      instruction: instructionForm.instruction.trim(),
+      priority: Number(instructionForm.priority) || 10,
+      is_active: instructionForm.is_active,
     });
   };
 
@@ -527,15 +586,71 @@ export default function SuperAdmin() {
         </CardContent>
       </Card>
 
+      {/* הגדרות בוט גלובליות */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">הגדרות בוט גלובליות</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-slate-500">
+            כאן אפשר להגדיר ברמה גבוהה איך הבוט מגיב בכל המערכת.
+          </p>
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="space-y-2 md:col-span-2">
+              <Label>כותרת ההנחיה</Label>
+              <Input
+                value={instructionForm.title}
+                onChange={(e) => setInstructionForm((prev) => ({ ...prev, title: e.target.value }))}
+                placeholder="לדוגמה: מדיניות תגובת בוט"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>עדיפות</Label>
+              <Input
+                type="number"
+                value={instructionForm.priority}
+                onChange={(e) => setInstructionForm((prev) => ({ ...prev, priority: e.target.value }))}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>הנחיה</Label>
+            <Textarea
+              rows={5}
+              value={instructionForm.instruction}
+              onChange={(e) => setInstructionForm((prev) => ({ ...prev, instruction: e.target.value }))}
+              placeholder="לדוגמה: תמיד לבקש שם+טלפון לפני יצירת ליד, ולענות בקצרה ובבהירות."
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={instructionForm.is_active}
+                onCheckedChange={(checked) => setInstructionForm((prev) => ({ ...prev, is_active: checked }))}
+              />
+              <Label>הנחיה פעילה</Label>
+            </div>
+            <Button onClick={handleSaveInstructions} disabled={upsertInstructionMutation.isPending}>
+              {upsertInstructionMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin ml-2" />
+              ) : (
+                <Save className="w-4 h-4 ml-2" />
+              )}
+              שמור הנחיות
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Bot Global Q&A */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Bot Global Q&A</CardTitle>
+          <CardTitle className="text-lg">שאלות ותשובות גלובליות לבוט</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-2">
-              <Label>Question</Label>
+              <Label>שאלה</Label>
               <Input
                 value={qaForm.question}
                 onChange={(e) => setQaForm((prev) => ({ ...prev, question: e.target.value }))}
@@ -543,7 +658,7 @@ export default function SuperAdmin() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Keywords (comma separated)</Label>
+              <Label>מילות מפתח (מופרד בפסיק)</Label>
               <Input
                 value={qaForm.keywords}
                 onChange={(e) => setQaForm((prev) => ({ ...prev, keywords: e.target.value }))}
@@ -551,15 +666,15 @@ export default function SuperAdmin() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Category</Label>
+              <Label>קטגוריה</Label>
               <Input
                 value={qaForm.category}
                 onChange={(e) => setQaForm((prev) => ({ ...prev, category: e.target.value }))}
-                placeholder="general"
+                placeholder="כללי"
               />
             </div>
             <div className="space-y-2">
-              <Label>Priority (lower = stronger)</Label>
+              <Label>עדיפות (מספר קטן = עדיפות גבוהה)</Label>
               <Input
                 type="number"
                 value={qaForm.priority}
@@ -568,7 +683,7 @@ export default function SuperAdmin() {
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Answer</Label>
+            <Label>תשובה</Label>
             <Textarea
               value={qaForm.answer}
               onChange={(e) => setQaForm((prev) => ({ ...prev, answer: e.target.value }))}
@@ -582,18 +697,18 @@ export default function SuperAdmin() {
             ) : (
               <Save className="w-4 h-4 ml-2" />
             )}
-            Add Global Q&A
+            הוסף תשובה גלובלית
           </Button>
 
           <div className="rounded-lg border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-right">Question</TableHead>
-                  <TableHead className="text-right">Category</TableHead>
-                  <TableHead className="text-right">Priority</TableHead>
-                  <TableHead className="text-right">Keywords</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-right">שאלה</TableHead>
+                  <TableHead className="text-right">קטגוריה</TableHead>
+                  <TableHead className="text-right">עדיפות</TableHead>
+                  <TableHead className="text-right">מילות מפתח</TableHead>
+                  <TableHead className="text-right">פעולות</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -620,7 +735,7 @@ export default function SuperAdmin() {
                 {!botQa.length && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center text-slate-500 py-6">
-                      No global Q&A yet
+                      עדיין לא נוספו תשובות גלובליות
                     </TableCell>
                   </TableRow>
                 )}
@@ -630,42 +745,42 @@ export default function SuperAdmin() {
         </CardContent>
       </Card>
 
-      {/* Bot Debug */}
+      {/* ניטור בוט */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Bot Debug (Conversations + Files)</CardTitle>
+          <CardTitle className="text-lg">ניטור בוט (שיחות וקבצים)</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           <div className="rounded-lg border p-3">
             <div className="font-semibold mb-2 flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
-              Recent Conversations
+              שיחות אחרונות
             </div>
             <div className="space-y-2 max-h-[260px] overflow-y-auto text-sm">
               {botConversations.map((conv) => (
                 <div key={conv.id} className="rounded border p-2">
                   <div className="font-medium">{conv.title || "CRM Bot"}</div>
-                  <div className="text-slate-500 text-xs">org: {conv.org_id}</div>
-                  <div className="text-slate-500 text-xs">user: {conv.user_id}</div>
+                  <div className="text-slate-500 text-xs">ארגון: {conv.org_id}</div>
+                  <div className="text-slate-500 text-xs">משתמש: {conv.user_id}</div>
                 </div>
               ))}
-              {!botConversations.length && <div className="text-slate-500">No conversations</div>}
+              {!botConversations.length && <div className="text-slate-500">אין שיחות להצגה</div>}
             </div>
           </div>
           <div className="rounded-lg border p-3">
             <div className="font-semibold mb-2 flex items-center gap-2">
               <FileIcon className="w-4 h-4" />
-              Recent Files
+              קבצים אחרונים
             </div>
             <div className="space-y-2 max-h-[260px] overflow-y-auto text-sm">
               {botFiles.map((file) => (
                 <div key={file.id} className="rounded border p-2">
                   <div className="font-medium truncate">{file.file_name}</div>
-                  <div className="text-slate-500 text-xs">purpose: {file.purpose || "unassigned"}</div>
+                  <div className="text-slate-500 text-xs">שיוך: {file.purpose || "לא משויך"}</div>
                   <div className="text-slate-500 text-xs truncate">{file.file_path}</div>
                 </div>
               ))}
-              {!botFiles.length && <div className="text-slate-500">No files</div>}
+              {!botFiles.length && <div className="text-slate-500">אין קבצים להצגה</div>}
             </div>
           </div>
         </CardContent>

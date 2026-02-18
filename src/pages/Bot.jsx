@@ -3,7 +3,7 @@ import { supabase } from "@/api/base44Client";
 import { processBotInput } from "@/lib/botEngine";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Bot as BotIcon, User as UserIcon, Send, Paperclip } from "lucide-react";
+import { Loader2, Bot as BotIcon, User as UserIcon, Send, Paperclip, RotateCcw } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function Bot() {
@@ -17,6 +17,12 @@ export default function Bot() {
   const [selectedFile, setSelectedFile] = useState(null);
   const { toast } = useToast();
   const messagesEndRef = useRef(null);
+  const welcomeMessage = "שלום, אני בוט חוקים פנימי. אפשר לבקש: יצירת ליד, חיפוש לקוח, סטטיסטיקות, יצירת משימה, או להעלות קובץ.";
+
+  const isCorruptedText = (value = "") => {
+    const markerCount = (value.match(/׳/g) || []).length;
+    return markerCount >= 4;
+  };
 
   useEffect(() => {
     init();
@@ -49,16 +55,17 @@ export default function Bot() {
       setSessionState(conv.session_state || {});
 
       const dbMessages = await supabase.bot.listMessages(conv.id);
-      setMessages(dbMessages);
+      const hasCorrupted = dbMessages.some((m) => isCorruptedText(m.content));
 
-      if (!dbMessages.length) {
-        const hello = "שלום, אני בוט חוקים פנימי. אפשר לבקש: יצירת ליד, חיפוש לקוח, סטטיסטיקות, יצירת משימה, או להעלות קובץ.";
+      if (hasCorrupted || !dbMessages.length) {
         const firstMsg = await supabase.bot.addMessage(conv.id, {
           role: "assistant",
-          content: hello,
+          content: welcomeMessage,
           userId: currentUser.id,
         });
         setMessages([firstMsg]);
+      } else {
+        setMessages(dbMessages);
       }
     } catch (error) {
       toast({
@@ -130,6 +137,23 @@ export default function Bot() {
     }
   };
 
+  const handleResetChat = async () => {
+    if (!conversation || !user) return;
+    try {
+      const msg = await supabase.bot.addMessage(conversation.id, {
+        role: "assistant",
+        content: welcomeMessage,
+        userId: user.id,
+      });
+      setMessages([msg]);
+      setSessionState({});
+      await supabase.bot.updateConversationSession(conversation.id, {});
+      toast({ title: "השיחה אופסה בהצלחה" });
+    } catch (error) {
+      toast({ title: "שגיאה באיפוס השיחה", description: error.message, variant: "destructive" });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -142,11 +166,15 @@ export default function Bot() {
     <div className="p-4 md:p-8 min-h-screen bg-slate-50" dir="rtl">
       <div className="max-w-4xl mx-auto space-y-4">
         <Card>
-          <CardHeader className="bg-slate-900 text-white">
+          <CardHeader className="bg-slate-900 text-white flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <BotIcon className="w-5 h-5" />
               CRM Bot
             </CardTitle>
+            <Button type="button" variant="outline" size="sm" onClick={handleResetChat} className="bg-white text-slate-900">
+              <RotateCcw className="w-4 h-4 ml-1" />
+              אפס שיחה
+            </Button>
           </CardHeader>
           <CardContent className="p-0">
             <div className="h-[520px] overflow-y-auto p-4 space-y-3">
