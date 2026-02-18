@@ -394,6 +394,38 @@ export const supabase = {
       if (error) throw error;
       return data || [];
     },
+    getOrCreateReferralCode: async () => {
+      if (!currentOrgId) throw new Error('No organization context');
+
+      const fallbackCode = currentOrgId;
+
+      try {
+        const { data: existing, error: existingError } = await supabaseClient
+          .from('referral_links')
+          .select('ref_code')
+          .eq('org_id', currentOrgId)
+          .maybeSingle();
+
+        if (existingError) throw existingError;
+        if (existing?.ref_code) return existing.ref_code;
+
+        const generatedCode = `org_${String(currentOrgId).replace(/-/g, '').slice(0, 12)}`;
+        const { data: created, error: createError } = await supabaseClient
+          .from('referral_links')
+          .upsert(
+            { org_id: currentOrgId, ref_code: generatedCode, is_active: true },
+            { onConflict: 'org_id' }
+          )
+          .select('ref_code')
+          .single();
+
+        if (createError) throw createError;
+        return created?.ref_code || generatedCode;
+      } catch (error) {
+        console.warn('Referral code fallback in use:', error.message);
+        return fallbackCode;
+      }
+    },
   },
 
   // Super admin methods (no org filtering)

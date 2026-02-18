@@ -269,6 +269,17 @@ CREATE POLICY "Referral link select by org" ON referral_links
 FOR SELECT TO authenticated
 USING (org_id IN (SELECT get_user_org_ids(auth.uid())));
 
+DROP POLICY IF EXISTS "Referral link insert by org" ON referral_links;
+CREATE POLICY "Referral link insert by org" ON referral_links
+FOR INSERT TO authenticated
+WITH CHECK (org_id IN (SELECT get_user_org_ids(auth.uid())));
+
+DROP POLICY IF EXISTS "Referral link update by org" ON referral_links;
+CREATE POLICY "Referral link update by org" ON referral_links
+FOR UPDATE TO authenticated
+USING (org_id IN (SELECT get_user_org_ids(auth.uid())))
+WITH CHECK (org_id IN (SELECT get_user_org_ids(auth.uid())));
+
 DROP POLICY IF EXISTS "Referrals select by org" ON referrals;
 CREATE POLICY "Referrals select by org" ON referrals
 FOR SELECT TO authenticated

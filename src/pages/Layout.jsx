@@ -17,6 +17,7 @@ import {
   ClipboardList,
   Truck,
   Building2,
+  Share2,
 } from "lucide-react";
 import {
   Sidebar,
@@ -160,6 +161,22 @@ export default function Layout({ children }) {
       updateStatusMutation.mutate("פנוי");
     } else {
       updateStatusMutation.mutate("בחופש");
+    }
+  };
+
+  const handleCopyReferralLink = async () => {
+    if (!user?.org_id) {
+      toast({ title: "לא זוהה ארגון לשיתוף", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const refCode = await supabase.org.getOrCreateReferralCode();
+      const signupUrl = `${window.location.origin}/signup?ref=${encodeURIComponent(refCode)}`;
+      await navigator.clipboard.writeText(signupUrl);
+      toast({ title: "לינק שיתוף הועתק", description: signupUrl });
+    } catch (error) {
+      toast({ title: "שגיאה בהעתקת לינק", description: error.message, variant: "destructive" });
     }
   };
 
@@ -311,6 +328,15 @@ export default function Layout({ children }) {
               
               {/* User Section - Compact */}
               <div className="flex items-center gap-1.5 min-w-[100px] justify-end">
+                <Button
+                  variant="ghost"
+                  onClick={handleCopyReferralLink}
+                  className="text-white hover:bg-white/10 h-7 px-2 text-[11px] flex-shrink-0"
+                  size="sm"
+                >
+                  <Share2 className="w-3.5 h-3.5 ml-1" />
+                  שיתוף
+                </Button>
                 {user && <SubscriptionBell subscriptionEndDate={user.subscription_end_date} />}
                 <div className="flex items-center gap-2 bg-white/10 rounded-lg px-2 py-1 backdrop-blur-sm">
                   <div className="w-7 h-7 bg-white rounded-full flex items-center justify-center flex-shrink-0">
@@ -438,6 +464,14 @@ export default function Layout({ children }) {
                   </div>
                   {user && (
                      <div className="space-y-2">
+                       <Button
+                         variant="outline"
+                         className="w-full justify-center gap-2"
+                         onClick={handleCopyReferralLink}
+                       >
+                         <Share2 className="w-4 h-4" />
+                         העתק לינק שיתוף
+                       </Button>
                        <div className="flex items-center justify-between p-2 bg-white rounded-lg border">
                          <span className="text-sm font-medium">
                            {user.availability_status === "פנוי" && "🟢 פנוי"}
