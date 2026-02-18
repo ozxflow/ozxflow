@@ -16,6 +16,10 @@ export function getCurrentOrgId() {
   return currentOrgId;
 }
 
+function sanitizeFileName(name = "file") {
+  return name.replace(/[^a-zA-Z0-9._-]/g, "_");
+}
+
 // Helper to create a full CRUD entity wrapper for a Supabase table with multi-tenancy
 function createEntity(tableName) {
   return {
@@ -488,6 +492,234 @@ export const supabase = {
     },
   },
 
+  bot: {
+    getOrCreateConversation: async (userId) => {
+      if (!currentOrgId) throw new Error('No organization context');
+
+      const { data: existing, error: existingError } = await supabaseClient
+        .from('bot_conversations')
+        .select('*')
+        .eq('org_id', currentOrgId)
+        .eq('user_id', userId)
+        .order('last_message_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (existingError) throw existingError;
+      if (existing) return existing;
+
+      const { data, error } = await supabaseClient
+        .from('bot_conversations')
+        .insert({
+          org_id: currentOrgId,
+          user_id: userId,
+          title: 'CRM Bot',
+          session_state: {},
+          last_message_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    listMessages: async (conversationId) => {
+      if (!currentOrgId) return [];
+      const { data, error } = await supabaseClient
+        .from('bot_messages')
+        .select('*')
+        .eq('org_id', currentOrgId)
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    addMessage: async (conversationId, { role, content, metadata = {}, userId = null }) => {
+      if (!currentOrgId) throw new Error('No organization context');
+      const { data, error } = await supabaseClient
+        .from('bot_messages')
+        .insert({
+          org_id: currentOrgId,
+          conversation_id: conversationId,
+          user_id: userId,
+          role,
+          content,
+          metadata,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+
+      await supabaseClient
+        .from('bot_conversations')
+        .update({ last_message_at: new Date().toISOString() })
+        .eq('id', conversationId)
+        .eq('org_id', currentOrgId);
+
+      return data;
+    },
+    updateConversationSession: async (conversationId, sessionState) => {
+      if (!currentOrgId) throw new Error('No organization context');
+      const { data, error } = await supabaseClient
+        .from('bot_conversations')
+        .update({
+          session_state: sessionState || {},
+          last_message_at: new Date().toISOString(),
+        })
+        .eq('id', conversationId)
+        .eq('org_id', currentOrgId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    uploadFile: async (conversationId, file, userId) => {
+      if (!currentOrgId) throw new Error('No organization context');
+      if (!file) throw new Error('File is required');
+
+      const safeName = sanitizeFileName(file.name || 'file');
+      const path = `${currentOrgId}/${conversationId}/${Date.now()}-${safeName}`;
+
+      const { error: uploadError } = await supabaseClient
+        .storage
+        .from('bot-files')
+        .upload(path, file, { upsert: false });
+      if (uploadError) throw uploadError;
+
+      const { data, error } = await supabaseClient
+        .from('bot_files')
+        .insert({
+          org_id: currentOrgId,
+          conversation_id: conversationId,
+          user_id: userId,
+          file_name: file.name || safeName,
+          file_path: path,
+          mime_type: file.type || null,
+          file_size: file.size || null,
+          purpose: 'unassigned',
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    assignFilePurpose: async (fileId, purpose) => {
+      if (!currentOrgId) throw new Error('No organization context');
+      const { data, error } = await supabaseClient
+        .from('bot_files')
+        .update({ purpose })
+        .eq('id', fileId)
+        .eq('org_id', currentOrgId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    createSignedUrl: async (filePath, expiresInSeconds = 3600) => {
+      const { data, error } = await supabaseClient
+        .storage
+        .from('bot-files')
+        .createSignedUrl(filePath, expiresInSeconds);
+      if (error) throw error;
+      return data?.signedUrl || null;
+    },
+    searchQA: async (queryText) => {
+      if (!queryText) return null;
+      if (!currentOrgId) return null;
+
+      const normalized = queryText.toLowerCase().trim();
+      const tokens = normalized.split(/\s+/).filter(Boolean);
+
+      const { data, error } = await supabaseClient
+        .from('bot_qa')
+        .select('*')
+        .eq('is_active', true)
+        .or(`org_id.is.null,org_id.eq.${currentOrgId}`);
+      if (error) throw error;
+
+      const rows = data || [];
+      if (!rows.length) return null;
+
+      const scored = rows
+        .map((row) => {
+          const q = String(row.question || '').toLowerCase();
+          const keywords = Array.isArray(row.keywords) ? row.keywords.map((k) => String(k).toLowerCase()) : [];
+          let score = 0;
+          for (const token of tokens) {
+            if (q.includes(token)) score += 3;
+            if (keywords.some((kw) => kw.includes(token) || token.includes(kw))) score += 5;
+          }
+          if (row.org_id === currentOrgId) score += 2;
+          score += Math.max(0, 100 - Number(row.priority || 100)) / 100;
+          return { row, score };
+        })
+        .filter((x) => x.score > 0)
+        .sort((a, b) => b.score - a.score || Number(a.row.priority || 100) - Number(b.row.priority || 100));
+
+      return scored[0]?.row || null;
+    },
+    searchContacts: async (term) => {
+      if (!currentOrgId || !term) return [];
+      const like = `%${term}%`;
+
+      const [{ data: leads, error: leadsError }, { data: customers, error: customersError }] = await Promise.all([
+        supabaseClient
+          .from('leads')
+          .select('id, customer_name, customer_phone')
+          .eq('org_id', currentOrgId)
+          .or(`customer_name.ilike.${like},customer_phone.ilike.${like}`)
+          .limit(10),
+        supabaseClient
+          .from('customers')
+          .select('id, full_name, phone')
+          .eq('org_id', currentOrgId)
+          .or(`full_name.ilike.${like},phone.ilike.${like}`)
+          .limit(10),
+      ]);
+
+      if (leadsError) throw leadsError;
+      if (customersError) throw customersError;
+      return [...(leads || []), ...(customers || [])];
+    },
+    getDashboardStats: async () => {
+      if (!currentOrgId) return { totalLeads: 0, monthLeads: 0, openJobs: 0, openTasks: 0 };
+
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+
+      const [totalLeadsRes, monthLeadsRes, openJobsRes, openTasksRes] = await Promise.all([
+        supabaseClient.from('leads').select('*', { count: 'exact', head: true }).eq('org_id', currentOrgId),
+        supabaseClient
+          .from('leads')
+          .select('*', { count: 'exact', head: true })
+          .eq('org_id', currentOrgId)
+          .gte('created_date', startOfMonth)
+          .lte('created_date', endOfMonth),
+        supabaseClient
+          .from('jobs')
+          .select('*', { count: 'exact', head: true })
+          .eq('org_id', currentOrgId)
+          .eq('status', 'פתוח'),
+        supabaseClient
+          .from('tasks')
+          .select('*', { count: 'exact', head: true })
+          .eq('org_id', currentOrgId)
+          .eq('status', 'פתוח'),
+      ]);
+
+      if (totalLeadsRes.error) throw totalLeadsRes.error;
+      if (monthLeadsRes.error) throw monthLeadsRes.error;
+      if (openJobsRes.error) throw openJobsRes.error;
+      if (openTasksRes.error) throw openTasksRes.error;
+
+      return {
+        totalLeads: totalLeadsRes.count || 0,
+        monthLeads: monthLeadsRes.count || 0,
+        openJobs: openJobsRes.count || 0,
+        openTasks: openTasksRes.count || 0,
+      };
+    },
+  },
+
   // Super admin methods (no org filtering)
   superAdmin: {
     listPlans: async () => {
@@ -665,6 +897,77 @@ export const supabase = {
       if (memberError) throw memberError;
 
       return { user, org };
+    },
+    listBotQA: async () => {
+      const { data, error } = await supabaseClient
+        .from('bot_qa')
+        .select('*')
+        .is('org_id', null)
+        .order('priority', { ascending: true })
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    createBotQA: async (payload) => {
+      const { data, error } = await supabaseClient
+        .from('bot_qa')
+        .insert({
+          org_id: null,
+          question: payload.question,
+          answer: payload.answer,
+          keywords: payload.keywords || [],
+          priority: payload.priority ?? 100,
+          category: payload.category || 'general',
+          is_active: payload.is_active !== false,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    updateBotQA: async (id, updates) => {
+      const { data, error } = await supabaseClient
+        .from('bot_qa')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    deleteBotQA: async (id) => {
+      const { error } = await supabaseClient
+        .from('bot_qa')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    listBotConversations: async (limit = 100) => {
+      const { data, error } = await supabaseClient
+        .from('bot_conversations')
+        .select('id, org_id, user_id, title, last_message_at, created_at')
+        .order('last_message_at', { ascending: false })
+        .limit(limit);
+      if (error) throw error;
+      return data || [];
+    },
+    listBotFiles: async (limit = 100) => {
+      const { data, error } = await supabaseClient
+        .from('bot_files')
+        .select('id, org_id, user_id, file_name, file_path, purpose, created_at')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      if (error) throw error;
+      return data || [];
+    },
+    listBotMessages: async (conversationId) => {
+      const { data, error } = await supabaseClient
+        .from('bot_messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data || [];
     },
     listAllUsers: async () => {
       const { data, error } = await supabaseClient

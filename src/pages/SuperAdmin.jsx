@@ -39,7 +39,9 @@ import {
   Save,
   UserPlus,
   Mail,
-  Phone,
+  Trash2,
+  MessageSquare,
+  FileText as FileIcon,
 } from "lucide-react";
 import { supabase } from "@/api/base44Client";
 import { PLAN_NAMES, ALL_PLANS } from "@/lib/planFeatures";
@@ -78,6 +80,13 @@ export default function SuperAdmin() {
   });
   const [addError, setAddError] = useState("");
   const [planLinksDraft, setPlanLinksDraft] = useState({});
+  const [qaForm, setQaForm] = useState({
+    question: "",
+    answer: "",
+    keywords: "",
+    category: "general",
+    priority: 100,
+  });
 
   // Fetch organizations
   const {
@@ -92,6 +101,44 @@ export default function SuperAdmin() {
   const { data: plans = [] } = useQuery({
     queryKey: ["superadmin", "plans"],
     queryFn: () => supabase.superAdmin.listPlans(),
+  });
+
+  const { data: botQa = [] } = useQuery({
+    queryKey: ["superadmin", "botQa"],
+    queryFn: () => supabase.superAdmin.listBotQA(),
+  });
+
+  const { data: botConversations = [] } = useQuery({
+    queryKey: ["superadmin", "botConversations"],
+    queryFn: () => supabase.superAdmin.listBotConversations(50),
+  });
+
+  const { data: botFiles = [] } = useQuery({
+    queryKey: ["superadmin", "botFiles"],
+    queryFn: () => supabase.superAdmin.listBotFiles(50),
+  });
+
+  const createBotQaMutation = useMutation({
+    mutationFn: (payload) => supabase.superAdmin.createBotQA(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["superadmin", "botQa"] });
+      setQaForm({ question: "", answer: "", keywords: "", category: "general", priority: 100 });
+      toast({ title: "רשומת Q&A נוספה" });
+    },
+    onError: (err) => {
+      toast({ title: "שגיאה בהוספה", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const deleteBotQaMutation = useMutation({
+    mutationFn: (id) => supabase.superAdmin.deleteBotQA(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["superadmin", "botQa"] });
+      toast({ title: "רשומת Q&A נמחקה" });
+    },
+    onError: (err) => {
+      toast({ title: "שגיאה במחיקה", description: err.message, variant: "destructive" });
+    },
   });
 
   const updatePlanConfigMutation = useMutation({
@@ -209,6 +256,26 @@ export default function SuperAdmin() {
     } catch (err) {
       toast({ title: "שגיאה בשמירת קישורים", description: err.message, variant: "destructive" });
     }
+  };
+
+  const handleCreateBotQA = () => {
+    if (!qaForm.question.trim() || !qaForm.answer.trim()) {
+      toast({ title: "יש למלא שאלה ותשובה", variant: "destructive" });
+      return;
+    }
+
+    const keywords = qaForm.keywords
+      .split(",")
+      .map((k) => k.trim())
+      .filter(Boolean);
+
+    createBotQaMutation.mutate({
+      question: qaForm.question.trim(),
+      answer: qaForm.answer.trim(),
+      keywords,
+      category: qaForm.category.trim() || "general",
+      priority: Number(qaForm.priority) || 100,
+    });
   };
 
   // Compute stats
@@ -457,6 +524,150 @@ export default function SuperAdmin() {
                 </div>
               );
             })}
+        </CardContent>
+      </Card>
+
+      {/* Bot Global Q&A */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Bot Global Q&A</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Question</Label>
+              <Input
+                value={qaForm.question}
+                onChange={(e) => setQaForm((prev) => ({ ...prev, question: e.target.value }))}
+                placeholder="לדוגמה: איך מוסיפים ליד?"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Keywords (comma separated)</Label>
+              <Input
+                value={qaForm.keywords}
+                onChange={(e) => setQaForm((prev) => ({ ...prev, keywords: e.target.value }))}
+                placeholder="ליד, יצירה, הוספה"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Input
+                value={qaForm.category}
+                onChange={(e) => setQaForm((prev) => ({ ...prev, category: e.target.value }))}
+                placeholder="general"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Priority (lower = stronger)</Label>
+              <Input
+                type="number"
+                value={qaForm.priority}
+                onChange={(e) => setQaForm((prev) => ({ ...prev, priority: e.target.value }))}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Answer</Label>
+            <Textarea
+              value={qaForm.answer}
+              onChange={(e) => setQaForm((prev) => ({ ...prev, answer: e.target.value }))}
+              rows={4}
+              placeholder="תשובת הבוט"
+            />
+          </div>
+          <Button onClick={handleCreateBotQA} disabled={createBotQaMutation.isPending}>
+            {createBotQaMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin ml-2" />
+            ) : (
+              <Save className="w-4 h-4 ml-2" />
+            )}
+            Add Global Q&A
+          </Button>
+
+          <div className="rounded-lg border overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-right">Question</TableHead>
+                  <TableHead className="text-right">Category</TableHead>
+                  <TableHead className="text-right">Priority</TableHead>
+                  <TableHead className="text-right">Keywords</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {botQa.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableCell className="max-w-[260px] truncate">{row.question}</TableCell>
+                    <TableCell>{row.category || "-"}</TableCell>
+                    <TableCell>{row.priority}</TableCell>
+                    <TableCell className="max-w-[280px] truncate">
+                      {(row.keywords || []).join(", ")}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteBotQaMutation.mutate(row.id)}
+                        disabled={deleteBotQaMutation.isPending}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {!botQa.length && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-slate-500 py-6">
+                      No global Q&A yet
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Bot Debug */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Bot Debug (Conversations + Files)</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-lg border p-3">
+            <div className="font-semibold mb-2 flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Recent Conversations
+            </div>
+            <div className="space-y-2 max-h-[260px] overflow-y-auto text-sm">
+              {botConversations.map((conv) => (
+                <div key={conv.id} className="rounded border p-2">
+                  <div className="font-medium">{conv.title || "CRM Bot"}</div>
+                  <div className="text-slate-500 text-xs">org: {conv.org_id}</div>
+                  <div className="text-slate-500 text-xs">user: {conv.user_id}</div>
+                </div>
+              ))}
+              {!botConversations.length && <div className="text-slate-500">No conversations</div>}
+            </div>
+          </div>
+          <div className="rounded-lg border p-3">
+            <div className="font-semibold mb-2 flex items-center gap-2">
+              <FileIcon className="w-4 h-4" />
+              Recent Files
+            </div>
+            <div className="space-y-2 max-h-[260px] overflow-y-auto text-sm">
+              {botFiles.map((file) => (
+                <div key={file.id} className="rounded border p-2">
+                  <div className="font-medium truncate">{file.file_name}</div>
+                  <div className="text-slate-500 text-xs">purpose: {file.purpose || "unassigned"}</div>
+                  <div className="text-slate-500 text-xs truncate">{file.file_path}</div>
+                </div>
+              ))}
+              {!botFiles.length && <div className="text-slate-500">No files</div>}
+            </div>
+          </div>
         </CardContent>
       </Card>
 
