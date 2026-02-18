@@ -646,13 +646,27 @@ export const supabase = {
       if (purpose === 'task') {
         linkedEntityType = 'task';
         const taskTitle = options.taskTitle?.trim() || `קובץ מהבוט: ${fileRow.file_name}`;
+
+        // Ensure the created task appears in "My Tasks"
+        let assigneeEmail = null;
+        if (fileRow.user_id) {
+          const { data: memberRow } = await supabaseClient
+            .from('org_members')
+            .select('email')
+            .eq('org_id', currentOrgId)
+            .eq('user_id', fileRow.user_id)
+            .maybeSingle();
+          assigneeEmail = memberRow?.email || null;
+        }
+
         const { data: task, error: taskError } = await supabaseClient
           .from('tasks')
           .insert({
             org_id: currentOrgId,
             title: taskTitle,
             description: `נוצר אוטומטית מהבוט עבור הקובץ: ${fileRow.file_name}`,
-            status: 'פתוח',
+            assigned_to: assigneeEmail,
+            status: 'ממתין',
             created_date: new Date().toISOString(),
           })
           .select()

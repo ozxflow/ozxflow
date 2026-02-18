@@ -17,7 +17,9 @@ function extractPhone(text) {
 }
 
 function extractTaskTitle(text) {
-  const match = text.match(/(?:משימה|כותרת)\s*[:\-]?\s*([^\n,]+)/i);
+  const match =
+    text.match(/(?:כותרת|משימה)\s*[:\-]?\s*([^\n,]+)/i) ||
+    text.match(/(?:בשם|שם)\s+([^\n,]+)/i);
   return match?.[1]?.trim() || "";
 }
 
@@ -188,7 +190,7 @@ export async function processBotInput({ text, fileMeta, session = {}, services }
     }
   }
 
-  if (nextSession.pendingFile && (!intent || intent === "file_action")) {
+  if (nextSession.pendingFile && (!intent || intent === "file_action" || intent === "create_task")) {
     return handleFilePurpose(input, nextSession, services);
   }
 
