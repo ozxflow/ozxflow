@@ -174,7 +174,10 @@ export const supabase = {
       }
 
       // Super admin flag
-      merged.is_super_admin = metadata.is_super_admin || false;
+      merged.is_super_admin =
+        metadata.is_super_admin ||
+        user.app_metadata?.is_super_admin ||
+        false;
 
       return merged;
     },

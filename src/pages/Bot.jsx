@@ -52,7 +52,7 @@ export default function Bot() {
       setMessages(dbMessages);
 
       if (!dbMessages.length) {
-        const hello = "׳©׳׳•׳, ׳׳ ׳™ ׳‘׳•׳˜ ׳—׳•׳§׳™׳ ׳₪׳ ׳™׳׳™. ׳׳₪׳©׳¨ ׳׳‘׳§׳©: ׳™׳¦׳™׳¨׳× ׳׳™׳“, ׳—׳™׳₪׳•׳© ׳׳§׳•׳—, ׳¡׳˜׳˜׳™׳¡׳˜׳™׳§׳•׳×, ׳™׳¦׳™׳¨׳× ׳׳©׳™׳׳”, ׳׳• ׳׳”׳¢׳׳•׳× ׳§׳•׳‘׳¥.";
+        const hello = "שלום, אני בוט חוקים פנימי. אפשר לבקש: יצירת ליד, חיפוש לקוח, סטטיסטיקות, יצירת משימה, או להעלות קובץ.";
         const firstMsg = await supabase.bot.addMessage(conv.id, {
           role: "assistant",
           content: hello,
@@ -62,7 +62,7 @@ export default function Bot() {
       }
     } catch (error) {
       toast({
-        title: "׳©׳’׳™׳׳” ׳‘׳˜׳¢׳™׳ ׳× ׳”׳‘׳•׳˜",
+        title: "שגיאה בטעינת הבוט",
         description: error.message,
         variant: "destructive",
       });
@@ -90,7 +90,7 @@ export default function Bot() {
       }
 
       const userText = inputMessage.trim();
-      const userContent = userText || `׳”׳•׳¢׳׳” ׳§׳•׳‘׳¥: ${fileMeta?.fileName || selectedFile?.name || "file"}`;
+      const userContent = userText || `הועלה קובץ: ${fileMeta?.fileName || selectedFile?.name || "file"}`;
 
       const userDbMessage = await supabase.bot.addMessage(conversation.id, {
         role: "user",
@@ -121,7 +121,7 @@ export default function Bot() {
       setSelectedFile(null);
     } catch (error) {
       toast({
-        title: "׳©׳’׳™׳׳” ׳‘׳©׳׳™׳—׳”",
+        title: "שגיאה בשליחה",
         description: error.message,
         variant: "destructive",
       });
@@ -177,7 +177,7 @@ export default function Bot() {
             <form onSubmit={handleSendMessage} className="border-t p-3 flex gap-2 items-end">
               <label className="inline-flex items-center gap-2 cursor-pointer border rounded-md px-3 h-10 bg-white">
                 <Paperclip className="w-4 h-4" />
-                <span className="text-sm">׳¦׳¨׳£ ׳§׳•׳‘׳¥</span>
+                <span className="text-sm">צרף קובץ</span>
                 <input
                   type="file"
                   className="hidden"
