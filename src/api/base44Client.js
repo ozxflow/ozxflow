@@ -426,6 +426,66 @@ export const supabase = {
         return fallbackCode;
       }
     },
+    getWalletInfo: async () => {
+      if (!currentOrgId) return { credit_balance: 0 };
+      try {
+        const { data, error } = await supabaseClient
+          .from('wallet_accounts')
+          .select('*')
+          .eq('org_id', currentOrgId)
+          .maybeSingle();
+        if (error) throw error;
+        return data || { credit_balance: 0 };
+      } catch (error) {
+        console.warn('Wallet info fallback in use:', error.message);
+        return { credit_balance: 0 };
+      }
+    },
+    getReferralStats: async () => {
+      if (!currentOrgId) {
+        return {
+          total_signups: 0,
+          total_upgraded: 0,
+          total_active: 0,
+        };
+      }
+      try {
+        const { data, error } = await supabaseClient
+          .from('referrals')
+          .select('status')
+          .eq('referrer_org_id', currentOrgId);
+        if (error) throw error;
+
+        const list = data || [];
+        return {
+          total_signups: list.length,
+          total_upgraded: list.filter((r) => r.status === 'upgraded').length,
+          total_active: list.filter((r) => r.status === 'signed_up' || r.status === 'upgraded').length,
+        };
+      } catch (error) {
+        console.warn('Referral stats fallback in use:', error.message);
+        return {
+          total_signups: 0,
+          total_upgraded: 0,
+          total_active: 0,
+        };
+      }
+    },
+    listReferrals: async () => {
+      if (!currentOrgId) return [];
+      try {
+        const { data, error } = await supabaseClient
+          .from('referrals')
+          .select('id, ref_code, status, source_type, signup_at, upgraded_at, referred_org_id')
+          .eq('referrer_org_id', currentOrgId)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data || [];
+      } catch (error) {
+        console.warn('Referrals list fallback in use:', error.message);
+        return [];
+      }
+    },
   },
 
   // Super admin methods (no org filtering)

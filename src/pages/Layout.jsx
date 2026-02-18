@@ -18,6 +18,7 @@ import {
   Truck,
   Building2,
   Share2,
+  Gift,
 } from "lucide-react";
 import {
   Sidebar,
@@ -216,6 +217,7 @@ export default function Layout({ children }) {
 
     // המשימות שלי - כולם
     items.push({ title: "המשימות שלי", url: createPageUrl("Tasks"), icon: ClipboardList });
+    items.push({ title: "חבר מביא חבר", url: createPageUrl("Referrals"), icon: Gift });
 
     // עובדים - כולם
     items.push({ title: "עובדים", url: createPageUrl("Employees"), icon: Users });

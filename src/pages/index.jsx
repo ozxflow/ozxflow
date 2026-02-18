@@ -52,6 +52,7 @@ import Login from "./Login";
 import ResetPassword from "./ResetPassword";
 import Signup from "./Signup";
 import SuperAdmin from "./SuperAdmin";
+import Referrals from "./Referrals";
 
 import { Route, Routes, useLocation } from 'react-router-dom';
 
@@ -106,6 +107,8 @@ const PAGES = {
     RenewSubscription: RenewSubscription,
 
     SuperAdmin: SuperAdmin,
+
+    Referrals: Referrals,
 
 }
 
