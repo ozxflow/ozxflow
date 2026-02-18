@@ -39,7 +39,7 @@ export default function Bot() {
       searchContacts: (term) => supabase.bot.searchContacts(term),
       getDashboardStats: () => supabase.bot.getDashboardStats(),
       searchQA: (text) => supabase.bot.searchQA(text),
-      assignFilePurpose: (fileId, purpose) => supabase.bot.assignFilePurpose(fileId, purpose),
+      assignFilePurpose: (fileId, purpose, options) => supabase.bot.assignFilePurpose(fileId, purpose, options),
     }),
     []
   );

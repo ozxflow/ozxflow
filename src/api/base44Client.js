@@ -629,17 +629,58 @@ export const supabase = {
       if (error) throw error;
       return data;
     },
-    assignFilePurpose: async (fileId, purpose) => {
+    assignFilePurpose: async (fileId, purpose, options = {}) => {
       if (!currentOrgId) throw new Error('No organization context');
+      const { data: fileRow, error: fileError } = await supabaseClient
+        .from('bot_files')
+        .select('*')
+        .eq('id', fileId)
+        .eq('org_id', currentOrgId)
+        .single();
+      if (fileError) throw fileError;
+
+      let linkedEntityType = null;
+      let linkedEntityId = null;
+      let createdTask = null;
+
+      if (purpose === 'task') {
+        linkedEntityType = 'task';
+        const taskTitle = options.taskTitle?.trim() || `קובץ מהבוט: ${fileRow.file_name}`;
+        const { data: task, error: taskError } = await supabaseClient
+          .from('tasks')
+          .insert({
+            org_id: currentOrgId,
+            title: taskTitle,
+            description: `נוצר אוטומטית מהבוט עבור הקובץ: ${fileRow.file_name}`,
+            status: 'פתוח',
+            created_date: new Date().toISOString(),
+          })
+          .select()
+          .single();
+        if (taskError) throw taskError;
+        linkedEntityId = task.id;
+        createdTask = task;
+      } else if (purpose === 'supplier_order') {
+        linkedEntityType = 'supplier_order';
+      } else if (purpose === 'customer') {
+        linkedEntityType = 'customer';
+      } else if (purpose === 'archive') {
+        linkedEntityType = 'archive';
+      }
+
       const { data, error } = await supabaseClient
         .from('bot_files')
-        .update({ purpose })
+        .update({
+          purpose,
+          linked_entity_type: linkedEntityType,
+          linked_entity_id: linkedEntityId,
+        })
         .eq('id', fileId)
         .eq('org_id', currentOrgId)
         .select()
         .single();
       if (error) throw error;
-      return data;
+      return { ...data, task: createdTask };
     },
     createSignedUrl: async (filePath, expiresInSeconds = 3600) => {
       const { data, error } = await supabaseClient

@@ -124,7 +124,17 @@ async function handleFilePurpose(text, session, services) {
       session,
     };
   }
-  await services.assignFilePurpose(session.pendingFile.fileId, purpose);
+
+  const taskTitle = purpose === "task" ? extractTaskTitle(text) : "";
+  const result = await services.assignFilePurpose(session.pendingFile.fileId, purpose, { taskTitle });
+
+  if (purpose === "task" && result?.task?.title) {
+    return {
+      reply: `הקובץ נשמר ושויך למשימה: "${result.task.title}".`,
+      session: { ...session, pendingFile: null },
+    };
+  }
+
   return {
     reply: "הקובץ נשמר בהצלחה.",
     session: { ...session, pendingFile: null },
@@ -164,7 +174,6 @@ export async function processBotInput({ text, fileMeta, session = {}, services }
 
   const intent = detectIntent(normalized);
 
-  // Fallback mechanism: continue pending question when user answers free text.
   if (!intent && nextSession.pending) {
     nextSession = continuePendingFlow(input, nextSession);
     if (nextSession.pending?.type === "create_lead") {
@@ -196,7 +205,6 @@ export async function processBotInput({ text, fileMeta, session = {}, services }
     return { reply: await handleStats(services), session: nextSession };
   }
 
-  // Q&A fallback: should include org-specific + global (NULL org_id).
   const qa = await services.searchQA(input);
   if (qa) {
     return { reply: qa.answer, session: nextSession };
