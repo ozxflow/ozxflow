@@ -9,6 +9,7 @@ import { Plus, Users, Phone, Mail, Truck, Edit, Trash2, MapPin, Clock } from "lu
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import EntityNotesDialog from "@/components/EntityNotesDialog";
 
 export default function Suppliers() {
   const [showForm, setShowForm] = useState(false);
@@ -245,7 +246,8 @@ export default function Suppliers() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-2 pt-4 border-t">
+                  <div className="grid grid-cols-3 gap-2 pt-4 border-t">
+                    <EntityNotesDialog entityType="supplier" entityId={supplier.id} entityLabel={supplier.name || "ספק"} />
                     <Button
                       size="sm"
                       onClick={() => handleEdit(supplier)}

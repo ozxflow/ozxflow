@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
+import EntityNotesDialog from "@/components/EntityNotesDialog";
 
 export default function Tasks() {
   const [newJobsCount, setNewJobsCount] = useState(0);
@@ -374,7 +375,8 @@ export default function Tasks() {
                         </p>
                       )}
                       
-                      <div className="grid grid-cols-2 gap-2 pt-3 border-t">
+                      <div className="grid grid-cols-3 gap-2 pt-3 border-t">
+                        <EntityNotesDialog entityType="task" entityId={task.id} entityLabel={task.title || "משימה"} />
                         <Button
                           size="sm"
                           onClick={() => handleEditTask(task)}

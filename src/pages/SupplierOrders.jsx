@@ -9,6 +9,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { format } from 'date-fns';
 import SupplierOrderForm from "../components/supplier_orders/SupplierOrderForm";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import EntityNotesDialog from "@/components/EntityNotesDialog";
 
 export default function SupplierOrders() {
   const [showForm, setShowForm] = useState(false);
@@ -326,6 +327,7 @@ export default function SupplierOrders() {
                   )}
                   
                   <div className="space-y-2 mt-4 pt-4 border-t">
+                    <EntityNotesDialog entityType="supplier_order" entityId={order.id} entityLabel={`הזמנה #${order.serial_number || ""}`} />
                     {order.status === 'טיוטה' && (
                       <>
                         <Button 

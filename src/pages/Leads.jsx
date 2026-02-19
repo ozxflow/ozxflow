@@ -17,6 +17,7 @@ import _ from 'lodash';
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import LeadsImport from "@/components/leads/LeadsImport";
+import EntityNotesDialog from "@/components/EntityNotesDialog";
 import { appConfig } from "@/config/appConfig";
 
 const MetricCard = ({ title, value, color, isActive, onClick }) => (
@@ -1498,6 +1499,12 @@ export default function Leads() {
                   </div>
                 );
               })()}
+
+              {editingLead && (
+                <div className="pt-3 border-t mt-4">
+                  <EntityNotesDialog entityType="lead" entityId={editingLead.id} entityLabel={editingLead.customer_name || "ליד"} />
+                </div>
+              )}
 
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={handleCloseDialog} className="bg-gray-100 hover:bg-gray-200">

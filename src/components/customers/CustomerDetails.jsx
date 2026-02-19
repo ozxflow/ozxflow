@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,24 +7,25 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Edit, Trash2, Phone, Mail, MapPin, Car, CheckSquare, FileText, Briefcase } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
+import EntityNotesDialog from "@/components/EntityNotesDialog";
 
 export default function CustomerDetails({ customer, vehicles, tasks, quotes = [], jobs = [], onEdit, onDelete, onBack }) {
   const navigate = useNavigate();
   const statusColors = {
-    "פעיל": "bg-green-100 text-green-800 border-green-200",
-    "לא פעיל": "bg-gray-100 text-gray-800 border-gray-200",
+    "׳₪׳¢׳™׳": "bg-green-100 text-green-800 border-green-200",
+    "׳׳ ׳₪׳¢׳™׳": "bg-gray-100 text-gray-800 border-gray-200",
     "VIP": "bg-purple-100 text-purple-800 border-purple-200"
   };
 
   const taskStatusColors = {
-    "ממתין": "bg-yellow-100 text-yellow-800 border-yellow-200",
-    "בטיפול": "bg-blue-100 text-blue-800 border-blue-200",
-    "הושלם": "bg-green-100 text-green-800 border-green-200",
-    "בוטל": "bg-gray-100 text-gray-800 border-gray-200"
+    "׳׳׳×׳™׳": "bg-yellow-100 text-yellow-800 border-yellow-200",
+    "׳‘׳˜׳™׳₪׳•׳": "bg-blue-100 text-blue-800 border-blue-200",
+    "׳”׳•׳©׳׳": "bg-green-100 text-green-800 border-green-200",
+    "׳‘׳•׳˜׳": "bg-gray-100 text-gray-800 border-gray-200"
   };
 
-  const completedTasks = tasks.filter(t => t.status === "הושלם");
-  const activeTasks = tasks.filter(t => t.status !== "הושלם" && t.status !== "בוטל");
+  const completedTasks = tasks.filter(t => t.status === "׳”׳•׳©׳׳");
+  const activeTasks = tasks.filter(t => t.status !== "׳”׳•׳©׳׳" && t.status !== "׳‘׳•׳˜׳");
 
   return (
     <motion.div
@@ -38,13 +39,13 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
         className="mb-4 hover:bg-slate-100"
       >
         <ArrowRight className="w-4 h-4 ml-2" />
-        חזרה לרשימת לקוחות
+        ׳—׳–׳¨׳” ׳׳¨׳©׳™׳׳× ׳׳§׳•׳—׳•׳×
       </Button>
 
       <Card className="border-none shadow-xl bg-white mb-6">
         <div className={`h-2 bg-gradient-to-r ${
           customer.status === "VIP" ? "from-purple-500 to-purple-600" :
-          customer.status === "פעיל" ? "from-green-500 to-green-600" :
+          customer.status === "׳₪׳¢׳™׳" ? "from-green-500 to-green-600" :
           "from-gray-400 to-gray-500"
         }`} />
         <CardHeader className="border-b border-slate-100 px-4 md:px-6">
@@ -74,7 +75,7 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
                 className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white text-xs md:text-sm"
               >
                 <FileText className="w-4 h-4 ml-1" />
-                צור הצעת מחיר
+                ׳¦׳•׳¨ ׳”׳¦׳¢׳× ׳׳—׳™׳¨
               </Button>
               <Button
                 variant="outline"
@@ -83,7 +84,7 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
                 className="hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 text-xs md:text-sm"
               >
                 <Edit className="w-4 h-4 ml-1" />
-                עריכה
+                ׳¢׳¨׳™׳›׳”
               </Button>
               <Button
                 variant="outline"
@@ -92,22 +93,23 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
                 className="hover:bg-red-50 hover:text-red-600 hover:border-red-200 text-xs md:text-sm"
               >
                 <Trash2 className="w-4 h-4 ml-1" />
-                מחיקה
+                ׳׳—׳™׳§׳”
               </Button>
+              <EntityNotesDialog entityType="customer" entityId={customer.id} entityLabel={customer.full_name || "לקוח"} />
             </div>
           </div>
         </CardHeader>
         <CardContent className="p-4 md:p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div className="space-y-3">
-              <h3 className="font-semibold text-base md:text-lg text-slate-900 mb-3">פרטי קשר</h3>
+              <h3 className="font-semibold text-base md:text-lg text-slate-900 mb-3">׳₪׳¨׳˜׳™ ׳§׳©׳¨</h3>
               {customer.phone && (
                 <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
                   <div className="p-2 bg-blue-100 rounded-lg">
                     <Phone className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">טלפון</p>
+                    <p className="text-xs text-slate-500">׳˜׳׳₪׳•׳</p>
                     <p className="font-medium text-slate-900">{customer.phone}</p>
                   </div>
                 </div>
@@ -118,7 +120,7 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
                     <Mail className="w-5 h-5 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">אימייל</p>
+                    <p className="text-xs text-slate-500">׳׳™׳׳™׳™׳</p>
                     <p className="font-medium text-slate-900">{customer.email}</p>
                   </div>
                 </div>
@@ -129,7 +131,7 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
                     <MapPin className="w-5 h-5 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">כתובת</p>
+                    <p className="text-xs text-slate-500">׳›׳×׳•׳‘׳×</p>
                     <p className="font-medium text-slate-900">{customer.address}</p>
                   </div>
                 </div>
@@ -138,7 +140,7 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
 
             {customer.notes && (
               <div>
-                <h3 className="font-semibold text-lg text-slate-900 mb-3">הערות</h3>
+                <h3 className="font-semibold text-lg text-slate-900 mb-3">׳”׳¢׳¨׳•׳×</h3>
                 <div className="p-4 bg-slate-50 rounded-lg">
                   <p className="text-slate-700 whitespace-pre-wrap">{customer.notes}</p>
                 </div>
@@ -154,7 +156,7 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
             <div className="flex justify-between items-center">
               <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                 <Car className="w-5 h-5 text-blue-500" />
-                מוצרים ({vehicles.length})
+                ׳׳•׳¦׳¨׳™׳ ({vehicles.length})
               </CardTitle>
             </div>
           </CardHeader>
@@ -175,7 +177,7 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
                       )}
                     </div>
                     {vehicle.color && (
-                      <p className="text-xs text-slate-500">צבע: {vehicle.color}</p>
+                      <p className="text-xs text-slate-500">׳¦׳‘׳¢: {vehicle.color}</p>
                     )}
                   </div>
                 ))}
@@ -183,7 +185,7 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
             ) : (
               <div className="text-center py-8 text-slate-500">
                 <Car className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                <p>אין פרטים רשומים ללקוח זה</p>
+                <p>׳׳™׳ ׳₪׳¨׳˜׳™׳ ׳¨׳©׳•׳׳™׳ ׳׳׳§׳•׳— ׳–׳”</p>
               </div>
             )}
           </CardContent>
@@ -193,7 +195,7 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
           <CardHeader className="border-b border-slate-100">
             <CardTitle className="flex items-center gap-2">
               <CheckSquare className="w-5 h-5 text-orange-500" />
-              משימות פעילות ({activeTasks.length})
+              ׳׳©׳™׳׳•׳× ׳₪׳¢׳™׳׳•׳× ({activeTasks.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
@@ -209,15 +211,15 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
                     </div>
                     {task.priority && (
                       <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white border-none text-xs">
-                        דחיפות {task.priority}
+                        ׳“׳—׳™׳₪׳•׳× {task.priority}
                       </Badge>
                     )}
                     {(task.estimated_cost > 0 || task.actual_cost > 0) && (
                       <p className="text-xs text-slate-600 mt-2">
                         {task.actual_cost > 0 
-                          ? `עלות: ₪${task.actual_cost.toLocaleString()}` 
+                          ? `׳¢׳׳•׳×: ג‚×${task.actual_cost.toLocaleString()}` 
                           : task.estimated_cost > 0 
-                          ? `משוער: ₪${task.estimated_cost.toLocaleString()}`
+                          ? `׳׳©׳•׳¢׳¨: ג‚×${task.estimated_cost.toLocaleString()}`
                           : ''}
                       </p>
                     )}
@@ -227,7 +229,7 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
             ) : (
               <div className="text-center py-8 text-slate-500">
                 <CheckSquare className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                <p>אין משימות פעילות</p>
+                <p>׳׳™׳ ׳׳©׳™׳׳•׳× ׳₪׳¢׳™׳׳•׳×</p>
               </div>
             )}
           </CardContent>
@@ -239,7 +241,7 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
           <CardHeader className="border-b border-slate-100">
             <CardTitle className="flex items-center gap-2">
               <CheckSquare className="w-5 h-5 text-green-500" />
-              היסטוריית משימות ({completedTasks.length})
+              ׳”׳™׳¡׳˜׳•׳¨׳™׳™׳× ׳׳©׳™׳׳•׳× ({completedTasks.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
@@ -251,12 +253,12 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
                       <h4 className="font-semibold text-slate-900 mb-1">{task.title}</h4>
                       {task.completed_date && (
                         <p className="text-xs text-slate-500">
-                          הושלם ב- {format(new Date(task.completed_date), "dd/MM/yyyy HH:mm", { locale: he })}
+                          ׳”׳•׳©׳׳ ׳‘- {format(new Date(task.completed_date), "dd/MM/yyyy HH:mm", { locale: he })}
                         </p>
                       )}
                     </div>
                     <Badge className="bg-green-100 text-green-800 border-green-200 border">
-                      ✓ הושלם
+                      ג“ ׳”׳•׳©׳׳
                     </Badge>
                   </div>
                 </div>
@@ -271,7 +273,7 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
         <CardHeader className="border-b border-slate-100">
           <CardTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-blue-500" />
-            הצעות מחיר ({quotes.length})
+            ׳”׳¦׳¢׳•׳× ׳׳—׳™׳¨ ({quotes.length})
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
@@ -279,17 +281,17 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
             <div className="space-y-3">
               {quotes.map((quote) => {
                 const statusColors = {
-                  "טיוטה": "bg-gray-100 text-gray-800 border-gray-200",
-                  "נשלחה": "bg-blue-100 text-blue-800 border-blue-200",
-                  "אושרה": "bg-green-100 text-green-800 border-green-200",
-                  "בוטלה": "bg-red-100 text-red-800 border-red-200",
+                  "׳˜׳™׳•׳˜׳”": "bg-gray-100 text-gray-800 border-gray-200",
+                  "׳ ׳©׳׳—׳”": "bg-blue-100 text-blue-800 border-blue-200",
+                  "׳׳•׳©׳¨׳”": "bg-green-100 text-green-800 border-green-200",
+                  "׳‘׳•׳˜׳׳”": "bg-red-100 text-red-800 border-red-200",
                 };
                 return (
                   <div key={quote.id} className="p-4 bg-gradient-to-r from-blue-50 to-sky-50 rounded-xl border border-blue-100">
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <h4 className="font-semibold text-slate-900">
-                          הצעה #{quote.serial_number || "—"}
+                          ׳”׳¦׳¢׳” #{quote.serial_number || "ג€”"}
                         </h4>
                         {quote.created_date && (
                           <p className="text-xs text-slate-500">
@@ -299,10 +301,10 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
                       </div>
                       <div className="flex items-center gap-2">
                         {quote.grand_total > 0 && (
-                          <span className="text-sm font-bold text-slate-700">₪{quote.grand_total?.toLocaleString()}</span>
+                          <span className="text-sm font-bold text-slate-700">ג‚×{quote.grand_total?.toLocaleString()}</span>
                         )}
                         <Badge className={`${statusColors[quote.status] || "bg-gray-100 text-gray-800"} border text-xs`}>
-                          {quote.status || "טיוטה"}
+                          {quote.status || "׳˜׳™׳•׳˜׳”"}
                         </Badge>
                       </div>
                     </div>
@@ -313,7 +315,7 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
           ) : (
             <div className="text-center py-8 text-slate-500">
               <FileText className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-              <p>אין הצעות מחיר ללקוח זה</p>
+              <p>׳׳™׳ ׳”׳¦׳¢׳•׳× ׳׳—׳™׳¨ ׳׳׳§׳•׳— ׳–׳”</p>
             </div>
           )}
         </CardContent>
@@ -324,7 +326,7 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
         <CardHeader className="border-b border-slate-100">
           <CardTitle className="flex items-center gap-2">
             <Briefcase className="w-5 h-5 text-orange-500" />
-            עבודות ({jobs.length})
+            ׳¢׳‘׳•׳“׳•׳× ({jobs.length})
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
@@ -332,16 +334,16 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
             <div className="space-y-3">
               {jobs.map((job) => {
                 const jobStatusColors = {
-                  "פתוח": "bg-yellow-100 text-yellow-800 border-yellow-200",
-                  "בדרך": "bg-blue-100 text-blue-800 border-blue-200",
-                  "בוצע": "bg-green-100 text-green-800 border-green-200",
-                  "נדחה": "bg-red-100 text-red-800 border-red-200",
+                  "׳₪׳×׳•׳—": "bg-yellow-100 text-yellow-800 border-yellow-200",
+                  "׳‘׳“׳¨׳": "bg-blue-100 text-blue-800 border-blue-200",
+                  "׳‘׳•׳¦׳¢": "bg-green-100 text-green-800 border-green-200",
+                  "׳ ׳“׳—׳”": "bg-red-100 text-red-800 border-red-200",
                 };
                 return (
                   <div key={job.id} className="p-4 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border border-orange-100">
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <h4 className="font-semibold text-slate-900">{job.customer_name || "עבודה"}</h4>
+                        <h4 className="font-semibold text-slate-900">{job.customer_name || "׳¢׳‘׳•׳“׳”"}</h4>
                         {job.created_date && (
                           <p className="text-xs text-slate-500">
                             {format(new Date(job.created_date), "dd/MM/yyyy", { locale: he })}
@@ -352,7 +354,7 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
                         )}
                       </div>
                       <Badge className={`${jobStatusColors[job.status] || "bg-gray-100 text-gray-800"} border text-xs`}>
-                        {job.status || "פתוח"}
+                        {job.status || "׳₪׳×׳•׳—"}
                       </Badge>
                     </div>
                   </div>
@@ -362,7 +364,7 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
           ) : (
             <div className="text-center py-8 text-slate-500">
               <Briefcase className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-              <p>אין עבודות ללקוח זה</p>
+              <p>׳׳™׳ ׳¢׳‘׳•׳“׳•׳× ׳׳׳§׳•׳— ׳–׳”</p>
             </div>
           )}
         </CardContent>
@@ -370,3 +372,4 @@ export default function CustomerDetails({ customer, vehicles, tasks, quotes = []
     </motion.div>
   );
 }
+

@@ -674,6 +674,20 @@ export const supabase = {
         if (taskError) throw taskError;
         linkedEntityId = task.id;
         createdTask = task;
+
+        // Create a first timeline note on the created task with the attached bot file.
+        await supabaseClient
+          .from('entity_notes')
+          .insert({
+            org_id: currentOrgId,
+            entity_type: 'task',
+            entity_id: task.id,
+            note_text: `קובץ שויך ע"י הבוט: ${fileRow.file_name}`,
+            file_name: fileRow.file_name,
+            file_bucket: 'bot-files',
+            file_path: fileRow.file_path,
+            created_by: fileRow.user_id,
+          });
       } else if (purpose === 'supplier_order') {
         linkedEntityType = 'supplier_order';
       } else if (purpose === 'customer') {
@@ -800,6 +814,95 @@ export const supabase = {
         openJobs: openJobsRes.count || 0,
         openTasks: openTasksRes.count || 0,
       };
+    },
+  },
+
+  notes: {
+    list: async (entityType, entityId) => {
+      if (!currentOrgId) throw new Error('No organization context');
+      const { data, error } = await supabaseClient
+        .from('entity_notes')
+        .select('*')
+        .eq('org_id', currentOrgId)
+        .eq('entity_type', entityType)
+        .eq('entity_id', entityId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+
+      const rows = data || [];
+      const withUrls = await Promise.all(
+        rows.map(async (row) => {
+          if (!row.file_path) return row;
+          const bucket = row.file_bucket || 'entity-notes';
+          const { data: signed, error: signedError } = await supabaseClient
+            .storage
+            .from(bucket)
+            .createSignedUrl(row.file_path, 3600);
+          if (signedError) {
+            return { ...row, file_url: null };
+          }
+          return { ...row, file_url: signed?.signedUrl || null };
+        })
+      );
+      return withUrls;
+    },
+    create: async ({ entityType, entityId, noteText, file, createdBy, createdByEmail }) => {
+      if (!currentOrgId) throw new Error('No organization context');
+
+      let fileName = null;
+      let filePath = null;
+      let fileBucket = null;
+
+      if (file) {
+        const safeName = sanitizeFileName(file.name || 'file');
+        filePath = `${currentOrgId}/${entityType}/${entityId}/${Date.now()}-${safeName}`;
+        const { error: uploadError } = await supabaseClient
+          .storage
+          .from('entity-notes')
+          .upload(filePath, file, { upsert: false });
+        if (uploadError) throw uploadError;
+        fileName = file.name || safeName;
+        fileBucket = 'entity-notes';
+      }
+
+      const { data, error } = await supabaseClient
+        .from('entity_notes')
+        .insert({
+          org_id: currentOrgId,
+          entity_type: entityType,
+          entity_id: entityId,
+          note_text: noteText || null,
+          file_name: fileName,
+          file_bucket: fileBucket,
+          file_path: filePath,
+          created_by: createdBy || null,
+          created_by_email: createdByEmail || null,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    remove: async (noteId) => {
+      if (!currentOrgId) throw new Error('No organization context');
+      const { data: row, error: rowError } = await supabaseClient
+        .from('entity_notes')
+        .select('*')
+        .eq('id', noteId)
+        .eq('org_id', currentOrgId)
+        .single();
+      if (rowError) throw rowError;
+
+      if (row.file_path && row.file_bucket === 'entity-notes') {
+        await supabaseClient.storage.from('entity-notes').remove([row.file_path]);
+      }
+
+      const { error } = await supabaseClient
+        .from('entity_notes')
+        .delete()
+        .eq('id', noteId)
+        .eq('org_id', currentOrgId);
+      if (error) throw error;
     },
   },
 

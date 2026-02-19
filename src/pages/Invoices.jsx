@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { cancelInvoice } from "@/api/functions";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import EntityNotesDialog from "@/components/EntityNotesDialog";
 
 export default function Invoices() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -434,6 +435,9 @@ export default function Invoices() {
                           )}
                         </div>
                       )}
+                      <div className="pt-2">
+                        <EntityNotesDialog entityType="invoice" entityId={invoice.id} entityLabel={`חשבונית #${invoice.serial_number || ""}`} />
+                      </div>
                     </CardContent>
                   </Card>
                 </motion.div>
