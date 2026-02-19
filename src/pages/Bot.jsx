@@ -78,6 +78,41 @@ export default function Bot() {
     }
   };
 
+  const runBotTurn = async ({ userText = "", fileMeta = null, action = null, userContentOverride = null }) => {
+    const userContent = userContentOverride || userText || (fileMeta ? `הועלה קובץ: ${fileMeta.fileName || "file"}` : "");
+    if (userContent) {
+      const userDbMessage = await supabase.bot.addMessage(conversation.id, {
+        role: "user",
+        content: userContent,
+        metadata: {
+          ...(fileMeta ? { file_id: fileMeta.fileId, file_name: fileMeta.fileName, file_path: fileMeta.filePath } : {}),
+          ...(action ? { action } : {}),
+        },
+        userId: user.id,
+      });
+      setMessages((prev) => [...prev, userDbMessage]);
+    }
+
+    const botResult = await processBotInput({
+      text: userText,
+      fileMeta,
+      action,
+      session: sessionState,
+      services,
+    });
+
+    const assistantDbMessage = await supabase.bot.addMessage(conversation.id, {
+      role: "assistant",
+      content: botResult.reply,
+      metadata: botResult.ui || {},
+      userId: user.id,
+    });
+
+    setMessages((prev) => [...prev, assistantDbMessage]);
+    setSessionState(botResult.session || {});
+    await supabase.bot.updateConversationSession(conversation.id, botResult.session || {});
+  };
+
   const handleSendMessage = async (e) => {
     e?.preventDefault();
     if (!conversation || !user) return;
@@ -97,38 +132,32 @@ export default function Bot() {
       }
 
       const userText = inputMessage.trim();
-      const userContent = userText || `הועלה קובץ: ${fileMeta?.fileName || selectedFile?.name || "file"}`;
-
-      const userDbMessage = await supabase.bot.addMessage(conversation.id, {
-        role: "user",
-        content: userContent,
-        metadata: fileMeta ? { file_id: fileMeta.fileId, file_name: fileMeta.fileName } : {},
-        userId: user.id,
-      });
-
-      setMessages((prev) => [...prev, userDbMessage]);
-
-      const botResult = await processBotInput({
-        text: userText,
-        fileMeta,
-        session: sessionState,
-        services,
-      });
-
-      const assistantDbMessage = await supabase.bot.addMessage(conversation.id, {
-        role: "assistant",
-        content: botResult.reply,
-        userId: user.id,
-      });
-
-      setMessages((prev) => [...prev, assistantDbMessage]);
-      setSessionState(botResult.session || {});
-      await supabase.bot.updateConversationSession(conversation.id, botResult.session || {});
+      await runBotTurn({ userText, fileMeta });
       setInputMessage("");
       setSelectedFile(null);
     } catch (error) {
       toast({
         title: "שגיאה בשליחה",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleLeadAttachClick = async (lead) => {
+    if (!lead?.id || isSending) return;
+    setIsSending(true);
+    try {
+      await runBotTurn({
+        userText: "",
+        action: { type: "attach_file_to_lead", leadId: lead.id },
+        userContentOverride: `לעדכן את הליד: ${lead.name}${lead.phone ? ` (${lead.phone})` : ""}`,
+      });
+    } catch (error) {
+      toast({
+        title: "שגיאה בשיוך קובץ לליד",
         description: error.message,
         variant: "destructive",
       });
@@ -191,6 +220,27 @@ export default function Bot() {
                     }`}
                   >
                     {msg.content}
+                    {msg.metadata?.file_name && (
+                      <div className={`mt-2 text-xs ${msg.role === "user" ? "text-blue-100" : "text-slate-500"}`}>
+                        📎 {msg.metadata.file_name}
+                      </div>
+                    )}
+                    {msg.role === "assistant" && Array.isArray(msg.metadata?.lead_candidates) && msg.metadata.lead_candidates.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {msg.metadata.lead_candidates.map((lead) => (
+                          <Button
+                            key={lead.id}
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleLeadAttachClick(lead)}
+                            disabled={isSending}
+                          >
+                            עדכן: {lead.name}{lead.phone ? ` (${lead.phone})` : ""}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {msg.role === "user" && (
                     <div className="w-8 h-8 rounded-full bg-slate-700 text-white flex items-center justify-center">

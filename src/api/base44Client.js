@@ -688,6 +688,50 @@ export const supabase = {
             file_path: fileRow.file_path,
             created_by: fileRow.user_id,
           });
+      } else if (purpose === 'lead') {
+        linkedEntityType = 'lead';
+        linkedEntityId = options.leadId || null;
+
+        if (!linkedEntityId && options.leadQuery) {
+          const like = `%${String(options.leadQuery).trim()}%`;
+          const { data: foundLead, error: foundLeadError } = await supabaseClient
+            .from('leads')
+            .select('id')
+            .eq('org_id', currentOrgId)
+            .or(`customer_name.ilike.${like},customer_phone.ilike.${like}`)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (foundLeadError) throw foundLeadError;
+          linkedEntityId = foundLead?.id || null;
+        }
+
+        if (!linkedEntityId) {
+          const { data: latestLead, error: latestLeadError } = await supabaseClient
+            .from('leads')
+            .select('id')
+            .eq('org_id', currentOrgId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (latestLeadError) throw latestLeadError;
+          linkedEntityId = latestLead?.id || null;
+        }
+
+        if (linkedEntityId) {
+          await supabaseClient
+            .from('entity_notes')
+            .insert({
+              org_id: currentOrgId,
+              entity_type: 'lead',
+              entity_id: linkedEntityId,
+              note_text: `קובץ שויך ע"י הבוט: ${fileRow.file_name}`,
+              file_name: fileRow.file_name,
+              file_bucket: 'bot-files',
+              file_path: fileRow.file_path,
+              created_by: fileRow.user_id,
+            });
+        }
       } else if (purpose === 'supplier_order') {
         linkedEntityType = 'supplier_order';
       } else if (purpose === 'customer') {
@@ -708,7 +752,7 @@ export const supabase = {
         .select()
         .single();
       if (error) throw error;
-      return { ...data, task: createdTask };
+      return { ...data, task: createdTask, linked_entity_id: linkedEntityId };
     },
     createSignedUrl: async (filePath, expiresInSeconds = 3600) => {
       const { data, error } = await supabaseClient

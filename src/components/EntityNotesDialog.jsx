@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+﻿import React, { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
-import { MessageSquare, Paperclip, Loader2, Trash2 } from "lucide-react";
+import { MessageSquare, Paperclip, Loader2, Trash2, Eye, Download } from "lucide-react";
 import { supabase } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -13,6 +13,7 @@ export default function EntityNotesDialog({ entityType, entityId, entityLabel = 
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
+  const [previewNoteId, setPreviewNoteId] = useState(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -60,6 +61,33 @@ export default function EntityNotesDialog({ entityType, entityId, entityLabel = 
   });
 
   const canSubmit = text.trim() || file;
+  const previewNote = useMemo(() => notes.find((n) => n.id === previewNoteId) || null, [notes, previewNoteId]);
+
+  const getFileKind = (fileName = "") => {
+    const ext = fileName.toLowerCase().split(".").pop();
+    if (["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"].includes(ext)) return "image";
+    if (ext === "pdf") return "pdf";
+    return "other";
+  };
+
+  const handleDownload = async (note) => {
+    if (!note?.file_url) return;
+    try {
+      const res = await fetch(note.file_url);
+      if (!res.ok) throw new Error("Download failed");
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = note.file_name || "attachment";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      toast({ title: "שגיאה בהורדת הקובץ", description: err.message, variant: "destructive" });
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -109,13 +137,75 @@ export default function EntityNotesDialog({ entityType, entityId, entityLabel = 
               </div>
               {note.note_text && <div className="text-sm whitespace-pre-wrap">{note.note_text}</div>}
               {note.file_url && (
-                <a href={note.file_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 underline">
-                  פתח קובץ: {note.file_name || "קובץ מצורף"}
-                </a>
+                <div className="space-y-2">
+                  <div className="text-sm text-slate-600">{note.file_name || "קובץ מצורף"}</div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setPreviewNoteId(note.id)}
+                    >
+                      <Eye className="w-4 h-4 ml-1" />
+                      תצוגה מקדימה
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownload(note)}
+                    >
+                      <Download className="w-4 h-4 ml-1" />
+                      הורדה
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
           ))}
         </div>
+
+        <Dialog open={!!previewNote} onOpenChange={(v) => !v && setPreviewNoteId(null)}>
+          <DialogContent dir="rtl" className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>תצוגה מקדימה - {previewNote?.file_name || "קובץ"}</DialogTitle>
+            </DialogHeader>
+            {previewNote?.file_url && (
+              <div className="space-y-3">
+                {getFileKind(previewNote.file_name) === "image" && (
+                  <img
+                    src={previewNote.file_url}
+                    alt={previewNote.file_name || "preview"}
+                    className="max-h-[70vh] w-full object-contain rounded border"
+                  />
+                )}
+                {getFileKind(previewNote.file_name) === "pdf" && (
+                  <iframe
+                    src={previewNote.file_url}
+                    title={previewNote.file_name || "preview"}
+                    className="w-full h-[70vh] rounded border"
+                  />
+                )}
+                {getFileKind(previewNote.file_name) === "other" && (
+                  <div className="text-sm text-slate-600 border rounded p-3 bg-slate-50">
+                    לא ניתן להציג תצוגה מקדימה לסוג הקובץ הזה.
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant="outline" onClick={() => handleDownload(previewNote)}>
+                    <Download className="w-4 h-4 ml-1" />
+                    הורדה
+                  </Button>
+                  <Button type="button" variant="secondary" asChild>
+                    <a href={previewNote.file_url} target="_blank" rel="noopener noreferrer">
+                      פתיחה בכרטיסייה חדשה
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );
